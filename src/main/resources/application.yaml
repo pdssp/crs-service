@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: crs-service
+  threads:
+    virtual:
+      enabled: true
