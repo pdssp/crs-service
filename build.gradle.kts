@@ -15,5 +15,6 @@ dependencies {
     compileOnly("org.jspecify:jspecify:1.0.0")
 
     // UNCOMMENT TO USE APACHE SIS NIGHTLY BUILD
+    implementation("org.geotoolkit:geotk-utility:5.0-SNAPSHOT")
     // implementation("org.apache.sis:sis-utility:2.0-SNAPSHOT")
 }
