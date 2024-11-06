@@ -32,12 +32,12 @@ public class DefaultCrsOperationService implements CrsOperationService {
         final CoordinateReferenceSystem crs1;
         final CoordinateReferenceSystem crs2;
         try {
-            crs1 = CRS.forCode(request.source());
+            crs1 = parseCRS(request.source());
         } catch (FactoryException ex) {
             throw new IllegalArgumentException("Source CRS unsupported : " + request.source(), ex);
         }
         try {
-            crs2 = CRS.forCode(request.target());
+            crs2 = parseCRS(request.target());
         } catch (FactoryException ex) {
             throw new IllegalArgumentException("Target CRS unsupported : " + request.target(), ex);
         }
@@ -74,6 +74,19 @@ public class DefaultCrsOperationService implements CrsOperationService {
             throw new IllegalArgumentException("Format not supported " + format);
         }
 
+    }
+
+    private static CoordinateReferenceSystem parseCRS(String text) throws FactoryException {
+        try {
+            return CRS.fromWKT(text);
+        } catch (FactoryException ex) {
+            try {
+                return CRS.forCode(text);
+            } catch (FactoryException ex1) {
+                ex.addSuppressed(ex1);
+                throw ex;
+            }
+        }
     }
 
     private static String toJavaScript(MathTransform trs, MathTransform invtrs, double accuracy, GeographicBoundingBox gbb) {
