@@ -14,7 +14,10 @@ dependencies {
     // For nullable annotations.
     compileOnly("org.jspecify:jspecify:1.0.0")
 
-    // UNCOMMENT TO USE APACHE SIS NIGHTLY BUILD
-    implementation("org.geotoolkit:geotk-utility:5.0-SNAPSHOT")
-    // implementation("org.apache.sis:sis-utility:2.0-SNAPSHOT")
+    implementation("org.apache.sis.core:sis-referencing:1.5-SNAPSHOT")
+    implementation("org.apache.sis.non-free:sis-embedded-data:1.3")
+    implementation("org.apache.derby:derby:10.15.2.0")
+    implementation("org.apache.derby:derbytools:10.15.2.0")
+    implementation("org.opengis:geoapi-conformance:3.0.2")
+
 }
