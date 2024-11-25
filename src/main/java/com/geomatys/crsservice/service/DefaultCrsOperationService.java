@@ -174,15 +174,15 @@ public class DefaultCrsOperationService implements CrsOperationService {
             final MathTransform step = steps.get(i);
             final int targetDimensions = step.getTargetDimensions();
 
-            sb.append("\n\t// STEP ").append(i+1).append(" : ").append(step.getClass().getSimpleName()).append("\n");
-            sb.append("\tdst = new Array(").append(targetDimensions).append(");\n");
+            sb.append("\n\t{// STEP ").append(i+1).append(" : ").append(step.getClass().getSimpleName()).append("\n");
+            sb.append("\t\tdst = new Array(").append(targetDimensions).append(");\n");
 
             if (step instanceof ExportableTransform exp) {
                 final String code;
                 try {
-                    code = exp.toECMAScript().replaceAll("\n", "\n\t");
-                    sb.append('\t');
-                    sb.append(code.endsWith("\n\t") ? code.substring(0, code.length()-2) : code);
+                    code = exp.toECMAScript().replaceAll("\n", "\n\t\t");
+                    sb.append("\t\t");
+                    sb.append(code.endsWith("\n\t\t") ? code.substring(0, code.length()-3) : code);
                     sb.append('\n');
                 } catch (UnsupportedOperationException ex) {
                     sb.append("\t// TODO unsupported\n");
@@ -191,60 +191,8 @@ public class DefaultCrsOperationService implements CrsOperationService {
                 sb.append("\t// TODO " + step.getClass().getName() + "\n");
             }
 
-//            if (step instanceof LinearTransform ln) {
-//                final Matrix matrix = ln.getMatrix();
-//                sb.append("\t/*\n\t").append(matrix.toString().replaceAll("\n", "\n\t")).append("*/\n");
-//                final int numCol = matrix.getNumCol();
-//
-//                for (int k = 0; k < targetDimensions; k++) {
-//                    sb.append("\tdst[").append(k).append("] = ");
-//                    boolean first = true;
-//                    for (int c = 0; c < numCol; c++) {
-//                        final double element = matrix.getElement(k, c);
-//                        if (element != 0.0) {
-//                            if (first) {
-//                                first = false;
-//                            } else {
-//                                sb.append(" + ");
-//                            }
-//                            sb.append(element).append(" * src[").append(c).append("]");
-//                        }
-//                    }
-//                    if (first) {
-//                        //all matrix row values are 0.0
-//                        sb.append("0.0");
-//                    }
-//
-//                    sb.append(";\n");
-//                }
-//
-//            } else if (step instanceof Mercator mercator) {
-//
-//                sb.append("""
-//                          φ = src[1];
-//                          sinφ = Math.sin(φ);
-//                          if (φ == 0.0) {
-//                            y = φ;
-//                          } else {
-//                            a = Math.abs(φ);
-//                            if (a < Math.PI / 2.0) {
-//                              y = Math.log(expΨ(φ, eccentricity * sinφ));
-//                            } else if (a <= (Math.PI/2 + ANGULAR_TOLERANCE)) {
-//                              y = Math.copySign(Math.POSITIVE_INFINITY, φ);
-//                            } else {
-//                              y = NaN;
-//                            }
-//                          }
-//                          dst[0] = src[0];
-//                          dst[1] = y;
-//                          """);
-//
-//            } else {
-//                sb.append("\t// TODO " + step.getClass().getName() + "\n");
-//            }
-
             //dst becomes src
-            sb.append("\tsrc = dst;\n");
+            sb.append("\t\tsrc = dst;\n\t}\n");
         }
 
         sb.append("\n\treturn dst;\n}");

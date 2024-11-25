@@ -44,6 +44,7 @@ public final class CRSServiceCoordinateOperationFactory implements CoordinateOpe
 
     public CRSServiceCoordinateOperationFactory(URI serviceURL) {
         this.serviceURL = serviceURL;
+        System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
     }
 
     @Override
@@ -54,9 +55,7 @@ public final class CRSServiceCoordinateOperationFactory implements CoordinateOpe
         final String query = serviceURL.toString() + "?source=" + crs1Txt + "&target=" + crs2Txt + "&format=text/javascript";
 
         try {
-            String code = getText(query);
-            code = code.replace("module.exports = { transform, inverseTransform, accuracy, areaOfValidity }", "");
-
+            final String code = getText(query);
             final ScriptEngineManager manager = new ScriptEngineManager();
             final ScriptEngine engine = manager.getEngineByName("js");
             engine.eval(code);
@@ -133,7 +132,9 @@ public final class CRSServiceCoordinateOperationFactory implements CoordinateOpe
                 for (int i = 0; i < sourceDim; i++) {
                     array[i] = src[so + i];
                 }
-                final List result = (List) engine.invokeFunction("transform", ProxyArray.fromArray(array));
+
+                final Object jsOperation = ((ScriptEngine) engine).eval("operation");
+                final List result = (List) engine.invokeMethod(jsOperation, "transform", ProxyArray.fromArray(array));
                 for (int i = 0; i < targetDim; i++) {
                     dst[doffset + i] = ((Number)result.get(i)).doubleValue();
                 }
