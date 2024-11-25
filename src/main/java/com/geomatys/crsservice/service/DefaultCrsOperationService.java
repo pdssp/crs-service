@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.sis.referencing.CRS;
 import org.apache.sis.referencing.operation.transform.MathTransforms;
 import org.apache.sis.referencing.privy.ExportableTransform;
+import org.opengis.geometry.Envelope;
 import org.opengis.metadata.extent.GeographicBoundingBox;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.CoordinateOperation;
@@ -60,10 +61,11 @@ public class DefaultCrsOperationService implements CrsOperationService {
 
         final double linearAccuracy = CRS.getLinearAccuracy(operation);
         final GeographicBoundingBox gbb = CRS.getGeographicBoundingBox(operation);
+        final Envelope domainOfValidity = CRS.getDomainOfValidity(crs2);
 
         final String format = request.format();
         if (FORMAT_JAVASCRIPT.equals(format)) {
-            final String code = toJavaScript(trs, inverseTrs, linearAccuracy, gbb);
+            final String code = toJavaScript(trs, inverseTrs, linearAccuracy, gbb, domainOfValidity, false);
             return new SourceCode(
                 MediaType.parseMediaType(FORMAT_JAVASCRIPT + "; charset=utf-8"),
                 new ByteArrayResource(code.getBytes(StandardCharsets.UTF_8))
@@ -89,49 +91,83 @@ public class DefaultCrsOperationService implements CrsOperationService {
         }
     }
 
-    private static String toJavaScript(MathTransform trs, MathTransform invtrs, double accuracy, GeographicBoundingBox gbb) {
+    /**
+     *
+     * @param trs
+     * @param invtrs
+     * @param accuracy
+     * @param operationGeographicBoundingBox
+     * @param module true to generate a module
+     * @return
+     */
+    private static String toJavaScript(MathTransform trs, MathTransform invtrs, double accuracy, GeographicBoundingBox operationGeographicBoundingBox, Envelope targetCrsDomainOfValidity, boolean module) {
         final StringBuilder sb = new StringBuilder();
 
+        sb.append(module ? "" : "const operation = {\n");
+
         sb.append("/*\n * The valid geographic area for the given coordinate operation (as an array [west, south, east, north]), or undefined\n */\n");
-        if (gbb != null) {
-            sb.append("const areaOfValidity = [")
-                    .append(gbb.getWestBoundLongitude()).append(", ")
-                    .append(gbb.getSouthBoundLatitude()).append(", ")
-                    .append(gbb.getEastBoundLongitude()).append(", ")
-                    .append(gbb.getNorthBoundLatitude())
-                    .append("];");
+        if (operationGeographicBoundingBox != null) {
+            sb.append(module ? "const operationGeographicBoundingBox =" : "operationGeographicBoundingBox :");
+            sb.append(" [")
+                    .append(operationGeographicBoundingBox.getWestBoundLongitude()).append(", ")
+                    .append(operationGeographicBoundingBox.getSouthBoundLatitude()).append(", ")
+                    .append(operationGeographicBoundingBox.getEastBoundLongitude()).append(", ")
+                    .append(operationGeographicBoundingBox.getNorthBoundLatitude())
+                    .append("]");
+            sb.append(module ? ";" : ",");
             sb.append("\n\n");
         } else {
-            sb.append("const areaOfValidity = undefined;");
+            sb.append(module ? "const operationGeographicBoundingBox = undefined;" : "operationGeographicBoundingBox : undefined,");
+            sb.append("\n\n");
+        }
+
+        sb.append("/*\n * The target coordinate reference system domain of validity, (as an array [minX, minY, maxX, maxY]), or undefined\n */\n");
+        if (targetCrsDomainOfValidity != null) {
+            sb.append(module ? "const domainOfValidity =" : "domainOfValidity :");
+            sb.append(" [")
+                    .append(targetCrsDomainOfValidity.getMinimum(0)).append(", ")
+                    .append(targetCrsDomainOfValidity.getMinimum(1)).append(", ")
+                    .append(targetCrsDomainOfValidity.getMaximum(0)).append(", ")
+                    .append(targetCrsDomainOfValidity.getMaximum(1))
+                    .append("]");
+            sb.append(module ? ";" : ",");
+            sb.append("\n\n");
+        } else {
+            sb.append(module ? "const domainOfValidity = undefined;" : "domainOfValidity : undefined,");
             sb.append("\n\n");
         }
 
         sb.append("/*\n * Positional accuracy estimation in metres for the given operation, or NaN if unknown.\n */\n");
-        sb.append("const accuracy = ").append(accuracy).append(";\n\n");
+        sb.append(module ? "const accuracy = " : "accuracy : ");
+        sb.append(accuracy);
+        sb.append(module ? ";" : ",");
+        sb.append("\n\n");
 
         sb.append("/*\n * The mathematical formula to transform coordinates\n */\n");
-        sb.append(toJavaScript("transform", trs));
+        sb.append(toJavaScript("transform", trs, module));
+        sb.append(module ? "" : ",");
         sb.append("\n\n");
 
         sb.append("/*\n * The mathematical formula to inverse transform coordinates, can be undefined.\n */\n");
         if (invtrs != null) {
-            sb.append(toJavaScript("inverseTransform", invtrs));
+            sb.append(toJavaScript("inverseTransform", invtrs, module));
+            sb.append(module ? "" : ",");
             sb.append("\n\n");
         } else {
             sb.append("const inverseTransform = undefined;");
+            sb.append(module ? "" : ",");
             sb.append("\n\n");
         }
 
-
-
-        sb.append("module.exports = { transform, inverseTransform, accuracy, areaOfValidity }\n");
+        sb.append(module ? "module.exports = { transform, inverseTransform, accuracy, areaOfValidity }\n" : "}");
 
         return sb.toString();
     }
 
-    private static String toJavaScript(String functionName, MathTransform trs) {
+    private static String toJavaScript(String functionName, MathTransform trs, boolean module) {
         final StringBuilder sb = new StringBuilder();
-        sb.append("function ").append(functionName).append("(src){\n");
+        sb.append(module ? "function "+functionName : functionName+": function");
+        sb.append("(src){\n");
 
         final List<MathTransform> steps = decompose(trs);
         for (int i = 0, n = steps.size(); i < n; i++) {

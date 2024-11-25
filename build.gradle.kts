@@ -25,4 +25,7 @@ dependencies {
     implementation("org.graalvm.js:js:24.1.1")
     implementation("org.graalvm.js:js-scriptengine:24.1.1")
 
+    // For GIGS tests
+    implementation("org.iogp:gigs:1.0-SNAPSHOT")
+
 }
