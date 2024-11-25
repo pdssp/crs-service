@@ -1,6 +1,7 @@
 
 package com.geomatys.crsservice.client;
 
+import com.geomatys.crsservice.AbstractIntegrationTest;
 import java.net.URI;
 import java.util.Arrays;
 import org.apache.sis.referencing.CRS;
@@ -16,12 +17,12 @@ import org.opengis.util.FactoryException;
  *
  * @author jsorel
  */
-public class ClientTest {
+public class ClientTest extends AbstractIntegrationTest {
 
     @Test
     public void operationTest() throws Exception {
         
-        CoordinateOperationFactory factory = new CRSServiceCoordinateOperationFactory(new URI("http://localhost:8080/crs/operation"));
+        CoordinateOperationFactory factory = new CRSServiceCoordinateOperationFactory(new URI(getServerUrl()+"/crs/operation"));
 
         testTransform(factory, "EPSG:4326", "EPSG:3395", new double[]{10, 20});
 
