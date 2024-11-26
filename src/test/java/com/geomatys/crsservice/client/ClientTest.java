@@ -32,6 +32,8 @@ public class ClientTest extends AbstractIntegrationTest {
         testTransform(factory, "EPSG:4326", "EPSG:3031", new double[]{60, 20});
         //TransverseMercator
         testTransform(factory, "EPSG:4326", "EPSG:32231", new double[]{48, 2});
+        //Geocentric
+        testTransform(factory, "EPSG:4326", "EPSG:4978", new double[]{48, 2});
 
     }
 
@@ -40,17 +42,41 @@ public class ClientTest extends AbstractIntegrationTest {
         final CoordinateReferenceSystem crsTarget = CRS.forCode(target);
         final CoordinateOperation distop = factory.createOperation(crsSource, crsTarget);
         final MathTransform distTrs = distop.getMathTransform();
-        final double[] distRes = coords.clone();
-        distTrs.transform(distRes, 0, distRes, 0, 1);
+        final double[] distRes = new double[distTrs.getTargetDimensions()];
+        distTrs.transform(coords, 0, distRes, 0, 1);
 
         //compare with SIS
         final CoordinateOperation localOp = CRS.findOperation(crsSource, crsTarget, null);
         final MathTransform localTrs = localOp.getMathTransform();
-        final double[] localRes = coords.clone();
-        localTrs.transform(localRes, 0, localRes, 0, 1);
+        final double[] localRes = new double[localTrs.getTargetDimensions()];
+        localTrs.transform(coords, 0, localRes, 0, 1);
 
         System.out.println(source + " " + Arrays.toString(coords) + " => " + target );
-        System.out.println("SIS : " + Arrays.toString(localRes) + "\nJS  : " + Arrays.toString(distRes));
+        System.out.println("SRC : " + Arrays.toString(coords));
+        System.out.println("SIS : " + Arrays.toString(localRes));
+        System.out.println("JS  : " + Arrays.toString(distRes));
+        System.out.println("");
+
+        {//test inverse
+            coords = localRes;
+
+            final CoordinateOperation rdistop = factory.createOperation(crsTarget, crsSource);
+            final MathTransform rdistTrs = rdistop.getMathTransform();
+            final double[] rdistRes = new double[rdistTrs.getTargetDimensions()];
+            rdistTrs.transform(coords, 0, rdistRes, 0, 1);
+
+            //compare with SIS
+            final CoordinateOperation rlocalOp = CRS.findOperation(crsTarget, crsSource, null);
+            final MathTransform rlocalTrs = rlocalOp.getMathTransform();
+            final double[] rlocalRes = new double[rlocalTrs.getTargetDimensions()];
+            rlocalTrs.transform(coords, 0, rlocalRes, 0, 1);
+
+            System.out.println(target + " => " + source);
+            System.out.println("SRC : " + Arrays.toString(coords));
+            System.out.println("SIS : " + Arrays.toString(rlocalRes));
+            System.out.println("JS  : " + Arrays.toString(rdistRes));
+            System.out.println("");
+        }
 
     }
 
