@@ -1,0 +1,136 @@
+
+
+package.json
+[source,json]
+----
+{
+  "name": "wms-custom-proj",
+  "dependencies": {
+    "ol": "10.2.1"
+  },
+  "devDependencies": {
+    "vite": "^3.2.3"
+  },
+  "scripts": {
+    "start": "vite",
+    "build": "vite build"
+  }
+}
+----
+
+index.html
+[source,html]
+----
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Custom Tiled WMS</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <link rel="stylesheet" href="node_modules/ol/ol.css">
+    <style>
+      .map {
+        width: 800px;
+        height: 800px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map" class="map"></div>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
+
+----
+
+main.js
+[source,javascript]
+----
+import Map from 'ol/Map.js';
+import Projection from 'ol/proj/Projection.js';
+import TileLayer from 'ol/layer/Tile.js';
+import TileWMS from 'ol/source/TileWMS.js';
+import OSM from 'ol/source/OSM.js';
+import View from 'ol/View.js';
+import {ScaleLine, defaults as defaultControls} from 'ol/control.js';
+import * as olProj from 'ol/proj';
+
+/**
+ * Download coordinate reference system definition.
+ *
+ * @param {*} source Coordinate Reference System code (Identifier, WKT)
+ * @param {*} longFirst force longitude first if true
+ * @returns 
+ */
+async function downloadCRS(source, longFirst=false) {
+  const url = 'http://127.0.0.1:8080/crs/define?source=' + source + '&longitudeFirst=' + longFirst + '&format=application/json';
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Response status: ${response.status}`);
+  }
+  const json = await response.json();
+  const projection = new Projection({
+    code: json.code,
+    extent: json.domainOfValidity,
+    units: json.units,
+    axisOrientation: json.axisDirection[0] == "east" ? "enu" : "neu"
+  });
+  return projection;
+}
+
+/**
+ * Download and register in OpenLayers the forward and inverse transforms between coordinate reference systems.
+ *
+ * @param {*} source source coordinate reference system
+ * @param {*} target target coordinate reference system
+ */
+async function registerOperation(source, target) {
+  const sourceLongFirst = source.getAxisOrientation().startsWith("e");
+  const targetLongFirst = target.getAxisOrientation().startsWith("e");
+  const url = 'http://127.0.0.1:8080/crs/operation?source=' + source.getCode() + '&sourceLongitudeFirst=' + sourceLongFirst + '&target=' + target.getCode() + '&targetLongitudeFirst=' + targetLongFirst + '&format=text/javascript';
+  await $.getScript( url, function( data, textStatus, jqxhr ) {});
+  const op = operation;
+
+  olProj.addCoordinateTransforms(
+    source,
+    target,
+    op.transform,
+    op.inverseTransform,
+  );
+}
+
+
+// Register the CRS and transforms we will use
+const epsg4326 = olProj.get("EPSG:4326"); //get CRS from openlayer
+const epsg3857 = olProj.get("EPSG:3857"); //get CRS from openlayer
+const epsg3031 = await downloadCRS("EPSG:3031"); //get CRS from server
+olProj.addProjection(epsg3031);
+await registerOperation(epsg4326, epsg3031);
+await registerOperation(epsg3857, epsg3031);
+
+
+// Create the map
+const layers = [
+  new TileLayer({
+    source: new OSM(),
+  })
+];
+
+const map = new Map({
+  controls: defaultControls().extend([
+    new ScaleLine({
+      units: 'metric',
+    }),
+  ]),
+  layers: layers,
+  target: 'map',
+  view: new View({
+    projection: epsg3031,
+    center: olProj.transform([0, 88.00], epsg4326, epsg3031),
+    extent: epsg3031.getExtent(),
+    zoom: 0,
+  }),
+});
+
+----
