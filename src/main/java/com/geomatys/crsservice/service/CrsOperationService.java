@@ -34,8 +34,17 @@ public interface CrsOperationService {
     SourceCode getOperation(OperationParameters parameters) throws IllegalArgumentException, UnsupportedOperationException;
 
     record CRSParameters(
+            /**
+             * EPSG/CRS/IAU/IGNF code, WKT, or URN.
+             */
             String source,
+            /**
+             * Set to true to force longitude first.
+             */
             boolean longitudeFirst,
+            /**
+             * Output format, only application/json is supported.
+             */
             String format
     ) {}
 

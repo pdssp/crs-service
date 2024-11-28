@@ -4,3 +4,7 @@ spring:
   threads:
     virtual:
       enabled: true
+server:
+  port: 8080
+  # for swagger api redirection
+  forward-headers-strategy: framework
