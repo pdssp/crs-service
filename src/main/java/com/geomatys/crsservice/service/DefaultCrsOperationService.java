@@ -1,9 +1,15 @@
 package com.geomatys.crsservice.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.sis.referencing.CRS;
+import org.apache.sis.referencing.crs.AbstractCRS;
+import org.apache.sis.referencing.cs.AxesConvention;
 import org.apache.sis.referencing.operation.transform.MathTransforms;
 import org.apache.sis.referencing.privy.ExportableTransform;
 import org.opengis.geometry.Envelope;
@@ -26,19 +32,66 @@ public class DefaultCrsOperationService implements CrsOperationService {
 
     private static final String FORMAT_JAVASCRIPT = "text/javascript";
     private static final String FORMAT_PYTHON = "text/x-python";
+    private static final String FORMAT_JSON = "application/json";
+    private static final String FORMAT_WKT ="application/wkt";
 
     @Override
-    public SourceCode getOperation(Specification request) throws IllegalArgumentException, UnsupportedOperationException {
+    public SourceCode getCRS(CRSParameters request) throws IllegalArgumentException, UnsupportedOperationException {
+
+        final CoordinateReferenceSystem crs;
+        try {
+            crs = parseCRS(request.source(), request.longitudeFirst());
+        } catch (FactoryException ex) {
+            throw new IllegalArgumentException("Source CRS unsupported : " + request.source(), ex);
+        }
+
+        final String format = request.format();
+        if (FORMAT_JSON.equals(format)) {
+            final Envelope domainOfValidity = CRS.getDomainOfValidity(crs);
+            final Map<String,Object> map = new LinkedHashMap<>();
+            map.put("code", request.source());
+            map.put("domainOfValidity", new double[]{domainOfValidity.getMinimum(0), domainOfValidity.getMinimum(1), domainOfValidity.getMaximum(0), domainOfValidity.getMaximum(1)});
+            map.put("units", crs.getCoordinateSystem().getAxis(0).getUnit().getSymbol());
+
+            final List<String> axisDirection = new ArrayList();
+            for (int i = 0; i < crs.getCoordinateSystem().getDimension(); i++) {
+                axisDirection.add(crs.getCoordinateSystem().getAxis(i).getDirection().identifier());
+            }
+            map.put("axisDirection", axisDirection);
+
+            final ObjectMapper mapper = new ObjectMapper();
+            final String json;
+            try {
+                json = mapper.writeValueAsString(map);
+            } catch (JsonProcessingException ex) {
+                throw new RuntimeException(ex.getMessage(), ex);
+            }
+
+            return new SourceCode(
+                MediaType.parseMediaType(FORMAT_JSON + "; charset=utf-8"),
+                new ByteArrayResource(json.getBytes(StandardCharsets.UTF_8))
+            );
+
+        } else if (FORMAT_WKT.equals(format)) {
+            throw new UnsupportedOperationException("TODO");
+        } else {
+            throw new IllegalArgumentException("Format not supported " + format);
+        }
+
+    }
+
+    @Override
+    public SourceCode getOperation(OperationParameters request) throws IllegalArgumentException, UnsupportedOperationException {
 
         final CoordinateReferenceSystem crs1;
         final CoordinateReferenceSystem crs2;
         try {
-            crs1 = parseCRS(request.source());
+            crs1 = parseCRS(request.source(), request.sourceLongFirst());
         } catch (FactoryException ex) {
             throw new IllegalArgumentException("Source CRS unsupported : " + request.source(), ex);
         }
         try {
-            crs2 = parseCRS(request.target());
+            crs2 = parseCRS(request.target(), request.targetLongFirst());
         } catch (FactoryException ex) {
             throw new IllegalArgumentException("Target CRS unsupported : " + request.target(), ex);
         }
@@ -78,9 +131,10 @@ public class DefaultCrsOperationService implements CrsOperationService {
 
     }
 
-    private static CoordinateReferenceSystem parseCRS(String text) throws FactoryException {
+    private static CoordinateReferenceSystem parseCRS(String text, boolean longFirst) throws FactoryException {
+        CoordinateReferenceSystem crs;
         try {
-            return CRS.fromWKT(text);
+            crs = CRS.fromWKT(text);
         } catch (FactoryException ex) {
             try {
                 return CRS.forCode(text);
@@ -89,6 +143,10 @@ public class DefaultCrsOperationService implements CrsOperationService {
                 throw ex;
             }
         }
+        if (longFirst) {
+            crs = AbstractCRS.castOrCopy(crs).forConvention(AxesConvention.DISPLAY_ORIENTED);
+        }
+        return crs;
     }
 
     /**
@@ -103,7 +161,26 @@ public class DefaultCrsOperationService implements CrsOperationService {
     private static String toJavaScript(MathTransform trs, MathTransform invtrs, double accuracy, GeographicBoundingBox operationGeographicBoundingBox, Envelope targetCrsDomainOfValidity, boolean module) {
         final StringBuilder sb = new StringBuilder();
 
-        sb.append(module ? "" : "const operation = {\n");
+        sb.append(
+                "/* Code generated by Apache SIS. https://sis.apache.org \n" +
+                " *\n" +
+                " * Licensed to the Apache Software Foundation (ASF) under one or more\n" +
+                " * contributor license agreements.  See the NOTICE file distributed with\n" +
+                " * this work for additional information regarding copyright ownership.\n" +
+                " * The ASF licenses this file to You under the Apache License, Version 2.0\n" +
+                " * (the \"License\"); you may not use this file except in compliance with\n" +
+                " * the License.  You may obtain a copy of the License at\n" +
+                " *\n" +
+                " *     http://www.apache.org/licenses/LICENSE-2.0\n" +
+                " *\n" +
+                " * Unless required by applicable law or agreed to in writing, software\n" +
+                " * distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
+                " * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
+                " * See the License for the specific language governing permissions and\n" +
+                " * limitations under the License.\n" +
+                " */\n");
+
+        sb.append(module ? "" : "operation = {\n");
 
         sb.append("/*\n * The valid geographic area for the given coordinate operation (as an array [west, south, east, north]), or undefined\n */\n");
         if (operationGeographicBoundingBox != null) {

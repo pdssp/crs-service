@@ -10,7 +10,20 @@ public interface CrsOperationService {
     /**
      * Create a source code to convert coordinates from a given <em>source CRS</em> to a <em>target CRS</em>.
      *
-     * @param specification Wanted operation specification.
+     * @param parameters Wanted crs parameters.
+     * @return The description of the CRS
+     *
+     * @throws IllegalArgumentException If the set of provided parameters is invalid (no source provided, etc.).
+     * @throws UnsupportedOperationException If the set of input parameters is correct, but the service cannot handle it.
+     *
+     * @see <a href="https://docs.spring.io/spring-framework/reference/core/resources.html#resources-implementations">Spring resource interface documentation</a>
+     */
+    SourceCode getCRS(CRSParameters parameters) throws IllegalArgumentException, UnsupportedOperationException;
+
+    /**
+     * Create a source code to convert coordinates from a given <em>source CRS</em> to a <em>target CRS</em>.
+     *
+     * @param parameters Wanted operation specification.
      * @return The source code to realize the operation, as a resource (i.e. a file or in-memory text)
      *
      * @throws IllegalArgumentException If the set of provided parameters is invalid (no source provided, etc.).
@@ -18,11 +31,19 @@ public interface CrsOperationService {
      *
      * @see <a href="https://docs.spring.io/spring-framework/reference/core/resources.html#resources-implementations">Spring resource interface documentation</a>
      */
-    SourceCode getOperation(Specification specification) throws IllegalArgumentException, UnsupportedOperationException;
+    SourceCode getOperation(OperationParameters parameters) throws IllegalArgumentException, UnsupportedOperationException;
 
-    record Specification(
+    record CRSParameters(
             String source,
+            boolean longitudeFirst,
+            String format
+    ) {}
+
+    record OperationParameters(
+            String source,
+            boolean sourceLongFirst,
             String target,
+            boolean targetLongFirst,
             String format,
             @Nullable double[] aoi,
             @Nullable OffsetDateTime time
