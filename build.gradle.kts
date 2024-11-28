@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.geomatys.boot.convention)
+    id("org.asciidoctor.jvm.convert") version "4.0.2"
 }
 
 dependencies {
