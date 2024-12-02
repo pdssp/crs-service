@@ -46,7 +46,7 @@ public final class IAUWKTExtractTool {
             }
         }
 
-        Files.writeString(Paths.get("iau.db"), sb.toString(), StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        Files.writeString(Paths.get("IAU.txt"), sb.toString(), StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
     }
 

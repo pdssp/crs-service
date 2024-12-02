@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.sis.referencing.CRS;
 import org.apache.sis.referencing.crs.AbstractCRS;
 import org.apache.sis.referencing.cs.AxesConvention;
@@ -220,20 +222,36 @@ public class DefaultCrsOperationService implements CrsOperationService {
         sb.append(module ? ";" : ",");
         sb.append("\n\n");
 
-        sb.append("/*\n * The mathematical formula to transform coordinates\n */\n");
-        sb.append(toJavaScript("transform", trs, module));
-        sb.append(module ? "" : ",");
-        sb.append("\n\n");
+        {
+            final Map<String,String> decomposed = new LinkedHashMap<>();
+            sb.append("/*\n * The mathematical formula to transform coordinates\n */\n");
+            toJavaScript(decomposed,"transform", trs, new AtomicInteger());
+            for (Entry<String,String> entry : decomposed.entrySet()) {
+                final String functionName = entry.getKey();
+                sb.append(module ? "function "+functionName : functionName+": function");
+                sb.append(entry.getValue());
+                sb.append(module ? "" : ",");
+                sb.append("\n\n");
+            }
+        }
 
-        sb.append("/*\n * The mathematical formula to inverse transform coordinates, can be undefined.\n */\n");
-        if (invtrs != null) {
-            sb.append(toJavaScript("inverseTransform", invtrs, module));
-            sb.append(module ? "" : ",");
-            sb.append("\n\n");
-        } else {
-            sb.append("const inverseTransform = undefined;");
-            sb.append(module ? "" : ",");
-            sb.append("\n\n");
+        {
+            sb.append("/*\n * The mathematical formula to inverse transform coordinates, can be undefined.\n */\n");
+            if (invtrs != null) {
+                final Map<String,String> decomposed = new LinkedHashMap<>();
+                toJavaScript(decomposed,"inverseTransform", invtrs, new AtomicInteger());
+                for (Entry<String,String> entry : decomposed.entrySet()) {
+                    final String functionName = entry.getKey();
+                    sb.append(module ? "function "+functionName : functionName+": function");
+                    sb.append(entry.getValue());
+                    sb.append(module ? "" : ",");
+                    sb.append("\n\n");
+                }
+            } else {
+                sb.append("const inverseTransform = undefined;");
+                sb.append(module ? "" : ",");
+                sb.append("\n\n");
+            }
         }
 
         sb.append(module ? "module.exports = { transform, inverseTransform, accuracy, areaOfValidity }\n" : "}");
@@ -241,78 +259,55 @@ public class DefaultCrsOperationService implements CrsOperationService {
         return sb.toString();
     }
 
-    private static String toJavaScript(String functionName, MathTransform trs, boolean module) {
+    private static String toJavaScript(Map<String,String> fctMap, String functionName, MathTransform trs, AtomicInteger increment) {
+        final int subi = increment.get();
+        final String finalName = ((subi == 0) ? "" : "_") + functionName + ((subi == 0) ? "" : (""+subi));
+        fctMap.put(finalName, ""); //placeholder to preserve function order
+
         final StringBuilder sb = new StringBuilder();
-        sb.append(module ? "function "+functionName : functionName+": function");
+//        sb.append(module ? "function "+functionName : functionName+": function");
         sb.append("(src){\n");
 
         final List<MathTransform> steps = decompose(trs);
-        for (int i = 0, n = steps.size(); i < n; i++) {
-            final MathTransform step = steps.get(i);
+
+        if (steps.size() == 1) {
+            final MathTransform step = steps.get(0);
             final int targetDimensions = step.getTargetDimensions();
 
-            sb.append("\n\t{// STEP ").append(i+1).append(" : ").append(step.getClass().getSimpleName()).append("\n");
-            sb.append("\t\tdst = new Array(").append(targetDimensions).append(");\n");
+            sb.append("\n\t// ").append(step.getClass().getSimpleName()).append("\n");
+            sb.append("\tdst = new Array(").append(targetDimensions).append(");\n");
 
             if (step instanceof ExportableTransform exp) {
                 final String code;
                 try {
-                    code = exp.toECMAScript().replaceAll("\n", "\n\t\t");
-                    sb.append("\t\t");
-                    sb.append(code.endsWith("\n\t\t") ? code.substring(0, code.length()-3) : code);
+                    code = exp.toECMAScript().replaceAll("\n", "\n\t");
+                    sb.append("\t");
+                    sb.append(code);
                     sb.append('\n');
                 } catch (UnsupportedOperationException ex) {
-                    sb.append("\t// TODO unsupported\n");
+                    sb.append("\t// TODO unsupported + ").append(ex.getMessage()).append("\n");
                 }
             } else {
                 sb.append("\t// TODO " + step.getClass().getName() + "\n");
             }
 
-            //dst becomes src
-            sb.append("\t\tsrc = dst;\n\t}\n");
+        } else {
+            //create a separate function for each step, to avoid possible variable name conflicts
+            for (int i = 0, n = steps.size(); i < n; i++) {
+                final MathTransform step = steps.get(i);
+                sb.append("\n\t// STEP ").append(i+1).append(" : ").append(step.getClass().getSimpleName()).append("\n");
+                increment.incrementAndGet();
+                final String fctName = toJavaScript(fctMap, functionName, step, increment);
+                //dst becomes src for next step
+                sb.append("\tdst = src = this.").append(fctName).append("(src);\n");
+            }
         }
 
         sb.append("\n\treturn dst;\n}");
-        return sb.toString();
-    }
 
-//    private static String toJson() {
-//
-//        final String forwardTransformFunction = toJavaScript("transform", trs);
-//        String inverseTransformFunction = null;
-//        try {
-//            inverseTransformFunction = toJavaScript("inverseTransform", trs.inverse());
-//        } catch (NoninvertibleTransformException ex) {
-//            //no nothing
-//        }
-//
-//        final Map<String,Object> map = new LinkedHashMap<>();
-//        map.put("//transform", "The mathematical formula to transform coordinates, to use it call : var trs = eval(json.transform); console.log(trs([1.0, 2.0])");
-//        map.put("transform", forwardTransformFunction);
-//        map.put("//inverseTransform", "The mathematical formula to inverse transform coordinates, can be null, to use it call : var invtrs = eval(json.inverseTransform); console.log(invtrs([1.0, 2.0])");
-//        map.put("inverseTransform", inverseTransformFunction);
-//        map.put("//accuracy", "Positional accuracy estimation in metres for the given operation, or NaN if unknown.");
-//        map.put("accuracy", linearAccuracy);
-//        map.put("//areaOfValidity", "The valid geographic area for the given coordinate operation (as an array [west, south, east, north]), or null");
-//        map.put("areaOfValidity", gbb == null ? null : new double[]{gbb.getWestBoundLongitude(), gbb.getSouthBoundLatitude(), gbb.getEastBoundLongitude(), gbb.getNorthBoundLatitude()});
-//
-//        System.out.println(forwardTransformFunction);
-//
-//        final JsonMapper mapper = JsonMapper.builder()
-//            .enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS)
-//            .build();
-//        String code;
-//        try {
-//            code = mapper.writeValueAsString(map);
-//        } catch (JsonProcessingException ex) {
-//            throw new RuntimeException(ex.getMessage(), ex);
-//        }
-//
-//        return new SourceCode(
-//                MediaType.parseMediaType("application/json"),
-//                new ByteArrayResource(code.getBytes(StandardCharsets.UTF_8))
-//        );
-//    }
+        fctMap.put(finalName, sb.toString());
+        return finalName;
+    }
 
     private static List<MathTransform> decompose(MathTransform trs) {
         final List<MathTransform> steps = MathTransforms.getSteps(trs);
