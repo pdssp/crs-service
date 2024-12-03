@@ -26,6 +26,8 @@ public class ClientTest extends AbstractIntegrationTest {
 
         CoordinateOperationFactory factory = new CRSServiceCoordinateOperationFactory(new URI(getServerUrl()+"/crs/operation"));
 
+        //Linear transform test
+        testTransform(factory, "EPSG:4326", "CRS:84", new double[]{10, 20}, true);
         //Mercator
         testTransform(factory, "EPSG:4326", "EPSG:3395", new double[]{10, 20}, true);
         //EquidistantCylindrical
@@ -34,18 +36,18 @@ public class ClientTest extends AbstractIntegrationTest {
         testTransform(factory, "EPSG:4326", "EPSG:3031", new double[]{60, 20}, true);
         //TransverseMercator
         testTransform(factory, "EPSG:4326", "EPSG:32231", new double[]{48, 2}, true);
+        //Lambert Conic
+        testTransform(factory, "EPSG:4326", "EPSG:2154", new double[]{48, 2}, true);
         //Geocentric
         testTransform(factory, "EPSG:4326", "EPSG:4978", new double[]{48, 2}, true);
 
         //test PassThroughTransform : Not working yet
-//        CoordinateReferenceSystem crs1 = CRS.compound(CRS.forCode("CRS:84"));
-//        CoordinateReferenceSystem crs2 = CRS.compound(CRS.forCode("CRS:84"), CRS.forCode("EPSG:5714"));
-//        CoordinateReferenceSystem crs3 = CRS.compound(CRS.forCode("EPSG:3395"), CRS.forCode("EPSG:5714"));
-//
-//        testTransform(factory, crs2.toWKT(), crs1.toWKT(), new double[]{40,50,100}, false);
-//        testTransform(factory, crs2.toWKT(), crs3.toWKT(), new double[]{40,50,100}, false);
+        CoordinateReferenceSystem crs1 = CRS.compound(CRS.forCode("CRS:84"));
+        CoordinateReferenceSystem crs2 = CRS.compound(CRS.forCode("CRS:84"), CRS.forCode("EPSG:5714"));
+        CoordinateReferenceSystem crs3 = CRS.compound(CRS.forCode("EPSG:3395"), CRS.forCode("EPSG:5714"));
 
-
+        testTransform(factory, crs2.toWKT(), crs1.toWKT(), new double[]{40,50,100}, false);
+        testTransform(factory, crs2.toWKT(), crs3.toWKT(), new double[]{40,50,100}, true);
     }
 
     private void testTransform(CoordinateOperationFactory factory, String source, String target, double[] coords, boolean testInverse) throws FactoryException, TransformException {

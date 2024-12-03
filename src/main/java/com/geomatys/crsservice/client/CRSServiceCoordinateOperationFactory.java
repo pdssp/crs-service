@@ -17,7 +17,7 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import org.apache.sis.metadata.simple.SimpleCitation;
+import org.apache.sis.metadata.iso.citation.DefaultCitation;
 import org.apache.sis.referencing.operation.AbstractCoordinateOperation;
 import org.apache.sis.referencing.operation.transform.AbstractMathTransform;
 import org.graalvm.polyglot.proxy.ProxyArray;
@@ -86,7 +86,7 @@ public final class CRSServiceCoordinateOperationFactory implements CoordinateOpe
 
     @Override
     public Citation getVendor() {
-        return new SimpleCitation(serviceURL.toString());
+        return new DefaultCitation(serviceURL.toString());
     }
 
     private static String getText(String url) throws URISyntaxException, IOException, InterruptedException {
