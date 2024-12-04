@@ -38,4 +38,4 @@ image:images/crs_define.png[]
 
 - *OpenLayers* : xref:./exemple_openlayer_epsg3031.adoc[Carte OpenStreetMap en projection Antarctic Polar Stereographic (EPSG:3031)]
 
-- *Python* : TODO
+- *Python* : xref:./exemple_python_epsg3031.adoc[Transformation de EPSG:4326 vers Polar Stereographic (EPSG:3031)]

@@ -26,7 +26,6 @@ index.html
   <head>
     <meta charset="UTF-8">
     <title>Custom Tiled WMS</title>
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <link rel="stylesheet" href="node_modules/ol/ol.css">
     <style>
       .map {
@@ -41,7 +40,6 @@ index.html
     <script type="module" src="main.js"></script>
   </body>
 </html>
-
 ----
 
 main.js

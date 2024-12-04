@@ -1,8 +1,21 @@
+index.html
+[source,html]
+----
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Custom Tiled WMS</title>
+  </head>
+  <body>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
+----
 
 main.js
 [source,javascript]
 ----
-//NodeJS 18+
 
 /**
  * Download the forward and inverse transforms between coordinate reference systems.
@@ -18,16 +31,12 @@ async function getOperation(source, target) {
   return new operation();
 }
 
-async function execute() {
-  const epsg4326 = "EPSG:4326"; 
-  const epsg3031 = "EPSG:3031";
-  const operation = await getOperation(epsg4326, epsg3031);
+const epsg4326 = "EPSG:4326"; 
+const epsg3031 = "EPSG:3031";
+const operation = await getOperation(epsg4326, epsg3031);
 
-  let coord3031 = operation.transform([10,80]);
-  let coord4326 = operation.inverseTransform(coord3031);
-  console.log(coord3031);
-  console.log(coord4326);
-}
-
-execute();
+let coord3031 = operation.transform([10,80]);
+let coord4326 = operation.inverseTransform(coord3031);
+console.log(coord3031);
+console.log(coord4326);
 ----

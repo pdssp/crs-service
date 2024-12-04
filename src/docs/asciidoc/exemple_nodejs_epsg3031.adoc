@@ -2,6 +2,8 @@
 main.js
 [source,javascript]
 ----
+//NodeJS 18+
+
 /**
  * Download the forward and inverse transforms between coordinate reference systems.
  *
@@ -16,12 +18,16 @@ async function getOperation(source, target) {
   return new operation();
 }
 
-const epsg4326 = "EPSG:4326"; 
-const epsg3031 = "EPSG:3031";
-const operation = await getOperation(epsg4326, epsg3031);
+async function execute() {
+  const epsg4326 = "EPSG:4326"; 
+  const epsg3031 = "EPSG:3031";
+  const operation = await getOperation(epsg4326, epsg3031);
 
-let coord3031 = operation.transform([10,80]);
-let coord4326 = operation.inverseTransform(coord3031);
-console.log(coord3031);
-console.log(coord4326);
+  let coord3031 = operation.transform([10,80]);
+  let coord4326 = operation.inverseTransform(coord3031);
+  console.log(coord3031);
+  console.log(coord4326);
+}
+
+execute();
 ----
