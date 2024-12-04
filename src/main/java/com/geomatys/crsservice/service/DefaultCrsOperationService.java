@@ -180,51 +180,51 @@ public class DefaultCrsOperationService implements CrsOperationService {
                 " * limitations under the License.\n" +
                 " */\n");
 
-        sb.append("operation = {\n");
+        sb.append("class Operation {\n");
 
         sb.append("/*\n * The valid geographic area for the given coordinate operation (as an array [west, south, east, north]), or undefined\n */\n");
         if (operationGeographicBoundingBox != null) {
-            sb.append("operationGeographicBoundingBox :");
+            sb.append("operationGeographicBoundingBox =");
             sb.append(" [")
                     .append(operationGeographicBoundingBox.getWestBoundLongitude()).append(", ")
                     .append(operationGeographicBoundingBox.getSouthBoundLatitude()).append(", ")
                     .append(operationGeographicBoundingBox.getEastBoundLongitude()).append(", ")
                     .append(operationGeographicBoundingBox.getNorthBoundLatitude())
                     .append("]");
-            sb.append(",");
+            sb.append(";");
             sb.append("\n\n");
         } else {
-            sb.append("operationGeographicBoundingBox : undefined,");
+            sb.append("operationGeographicBoundingBox = undefined;");
             sb.append("\n\n");
         }
 
         sb.append("/*\n * The target coordinate reference system domain of validity, (as an array [minX, minY, maxX, maxY]), or undefined\n */\n");
         if (targetCrsDomainOfValidity != null) {
-            sb.append("domainOfValidity :");
+            sb.append("domainOfValidity =");
             sb.append(" [")
                     .append(targetCrsDomainOfValidity.getMinimum(0)).append(", ")
                     .append(targetCrsDomainOfValidity.getMinimum(1)).append(", ")
                     .append(targetCrsDomainOfValidity.getMaximum(0)).append(", ")
                     .append(targetCrsDomainOfValidity.getMaximum(1))
                     .append("]");
-            sb.append(",");
+            sb.append(";");
             sb.append("\n\n");
         } else {
-            sb.append("domainOfValidity : undefined,");
+            sb.append("domainOfValidity = undefined;");
             sb.append("\n\n");
         }
 
         sb.append("/*\n * Positional accuracy estimation in metres for the given operation, or NaN if unknown.\n */\n");
-        sb.append("accuracy : ");
-        sb.append(accuracy);
-        sb.append(",");
+        sb.append("accuracy = ");
+        sb.append(Double.toString(accuracy));
+        sb.append(";");
         sb.append("\n\n");
 
         {
             sb.append("/*\n * The mathematical formula to transform coordinates\n */\n");
             final String jsobj = toJavaScriptObject(trs);
-            sb.append("_forward: ").append(jsobj).append(",\n");
-            sb.append("transform: function(src){\n\treturn this._forward.transform(src);\n\t},\n");
+            sb.append("#forward = ").append(jsobj).append(";\n");
+            sb.append("transform = (src) => {\n\treturn this.#forward.transform(src);\n\t};\n");
 
         }
 
@@ -232,11 +232,10 @@ public class DefaultCrsOperationService implements CrsOperationService {
             sb.append("/*\n * The mathematical formula to inverse transform coordinates, can be undefined.\n */\n");
             if (invtrs != null) {
                 final String jsobj = toJavaScriptObject(invtrs);
-                sb.append("_inverse: ").append(jsobj).append(",\n");
-                sb.append("inverseTransform: function(src){\n\treturn this._inverse.transform(src);\n\t},\n");
+                sb.append("#inverse = ").append(jsobj).append(";\n");
+                sb.append("inverseTransform = (src) => {\n\treturn this.#inverse.transform(src);\n\t};\n");
             } else {
                 sb.append("const inverseTransform = undefined;");
-                sb.append(",");
                 sb.append("\n\n");
             }
         }
@@ -269,6 +268,7 @@ public class DefaultCrsOperationService implements CrsOperationService {
             final StringBuilder trsSb = new StringBuilder();
             sb.append("{\n");
             trsSb.append("\ttransform : function(src) {\n");
+            trsSb.append("\t\tlet dst;\n");
 
             for (int i = 0, n = steps.size(); i < n; i++) {
                 final MathTransform step = steps.get(i);

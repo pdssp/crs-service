@@ -9,6 +9,12 @@
 
 == Administration du serveur
 
+=== Demarrage et arret
+
+TODO
+
+=== Configuration de la base IAU
+
 TODO
 
 == Documentation OpenAPI 3
@@ -26,18 +32,10 @@ image:images/crs_define.png[]
 
 == Exemples d'utilisation
 
-=== Client Javascript
+- *JavaScript* : xref:./exemple_javascript_epsg3031.adoc[Transformation de EPSG:4326 vers Polar Stereographic (EPSG:3031)]
 
-TODO
+- *NodeJS* : xref:./exemple_nodejs_epsg3031.adoc[Transformation de EPSG:4326 vers Polar Stereographic (EPSG:3031)]
 
-=== Client NodeJS
+- *OpenLayers* : xref:./exemple_openlayer_epsg3031.adoc[Carte OpenStreetMap en projection Antarctic Polar Stereographic (EPSG:3031)]
 
-TODO
-
-=== Client OpenLayers
-
-- xref:./exemple_openlayer_epsg3031.adoc[Carte OpenStreetMap en projection Antarctic Polar Stereographic (EPSG:3031)]
-
-=== Client Python
-
-TODO
+- *Python* : TODO
