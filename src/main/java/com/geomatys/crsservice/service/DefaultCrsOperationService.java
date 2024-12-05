@@ -377,14 +377,17 @@ public class DefaultCrsOperationService implements CrsOperationService {
         ecmaCode = ecmaCode.replace("\n", "\n\t");
 
         String pythonCode = ecmaCode;
+
+        //======= elements whatever the depth =================
         //remove long comments
-        pythonCode = pythonCode.replaceAll("\\/\\*[\\S\\s]*\\*\\/", "");
+        pythonCode = pythonCode.replaceAll("\\/\\*[\\S\\s]*?\\*\\/", "");
         //remove object starting {
         pythonCode = pythonCode.replaceAll("\\A\\{", "");
         //remove object ending }
         pythonCode = pythonCode.replaceAll("\\}\\Z", "");
         //remove variable creation
         pythonCode = pythonCode.replaceAll("let ", "");
+        pythonCode = pythonCode.replaceAll("const ", "");
         //replace tabs by 2 spaces
         pythonCode = pythonCode.replace("\t", "  ");
         //replace all this by self
@@ -393,26 +396,66 @@ public class DefaultCrsOperationService implements CrsOperationService {
         pythonCode = pythonCode.replaceAll("\\/\\/", "#");
         //replace ; endline
         pythonCode = pythonCode.replaceAll("; *\n", "\n");
+
+        {//replace objects
+            final Pattern objPattern = Pattern.compile("( +)(\\S+)( +: +)\\{");
+            final Matcher m = objPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                final int depth = m.group(1).length();
+                final String objName = m.group(2);
+                sb.append(pythonCode.substring(groupEnd, m.start()));
+
+                for (int i = 0; i < depth; i++) sb.append(' ');
+                sb.append(objName).append(" = ").append(objName).append("C()\n");
+
+                for (int i = 0; i < depth; i++) sb.append(' ');
+                sb.append("class ").append(objName).append("C :");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
         //remove object,function,control flow { and }
-        pythonCode = pythonCode.replaceAll("\\{|\\}", "");
+        pythonCode = pythonCode.replaceAll("\\{|\\},?", "");
         {//replace functions
-            final Pattern fctPattern = Pattern.compile("(\\S*)( *: *)(function *)(\\()(.*)(\\))");
+            final Pattern fctPattern = Pattern.compile("(?<=\\n)( +)(\\S+)( *: *)(function *)(\\()(.*)(\\))");
             final Matcher m = fctPattern.matcher(pythonCode);
             final StringBuilder sb = new StringBuilder();
             int groupEnd = 0;
             while (m.find()) {
-                final String fctName = m.group(1);
-                final String fctParams = m.group(5);
+                final String before = m.group(1);
+                final String fctName = m.group(2);
+                final String fctParams = m.group(6);
                 sb.append(pythonCode.substring(groupEnd, m.start()));
-                sb.append("def ").append(fctName).append("(self,").append(fctParams).append(")");
+                sb.append(before).append("def ").append(fctName).append("(self,").append(fctParams).append("):");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
+        {//replace object properties
+            final Pattern propPattern = Pattern.compile("(?<=\\n)( +)(\\S+)( *: *)(\\S+)( *, *(?=\\n))");
+            final Matcher m = propPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                final String before = m.group(1);
+                final String propName = m.group(2);
+                final String propValue = m.group(4);
+                sb.append(pythonCode.substring(groupEnd, m.start()));
+                sb.append(before).append(propName).append(" = ").append(propValue);
                 groupEnd = m.end();
             }
             sb.append(pythonCode.substring(groupEnd));
             pythonCode = sb.toString();
         }
         {//replace array creation
-            final Pattern fctPattern = Pattern.compile("(new Array\\()(.*)(\\))");
-            final Matcher m = fctPattern.matcher(pythonCode);
+            final Pattern arrayPattern = Pattern.compile("(new Array\\()(.*)(\\))");
+            final Matcher m = arrayPattern.matcher(pythonCode);
             final StringBuilder sb = new StringBuilder();
             int groupEnd = 0;
             while (m.find()) {
@@ -424,6 +467,11 @@ public class DefaultCrsOperationService implements CrsOperationService {
             sb.append(pythonCode.substring(groupEnd));
             pythonCode = sb.toString();
         }
+        {//replace if/else
+//            pythonCode = pythonCode.replaceAll("else if", "elif");
+//            pythonCode = pythonCode.replaceAll("else , "else:");
+        }
+
 
 
         return pythonCode;

@@ -2,5 +2,24 @@
 main.py
 [source,python]
 ----
-//TODO
+import requests
+import types
+import sys
+
+
+# Récupération du code de transformation
+url:str = 'http://localhost:8080/crs/operation?source=EPSG:4326&target=CRS:84&format=text/x-python'
+operationCode:str = requests.get(url).content;
+
+# Chargement du code dans un module
+module = types.ModuleType('test')
+exec(operationCode, module.__dict__)
+
+# Création d'une instance de l'opération
+operationClass = getattr(module, 'Operation')
+operation = operationClass()
+
+# Transformation d'une coordonnée
+res = operation.transform([10,20])
+print(res)
 ----
