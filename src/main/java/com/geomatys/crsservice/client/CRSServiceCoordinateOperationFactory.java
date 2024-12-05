@@ -58,7 +58,7 @@ public final class CRSServiceCoordinateOperationFactory implements CoordinateOpe
             final String code = getText(query);
             final ScriptEngineManager manager = new ScriptEngineManager();
             final ScriptEngine engine = manager.getEngineByName("js");
-            engine.eval(code);
+            Object res = engine.eval("const operationClass = ("+code+");\noperation = new operationClass();");
             final JSMathTransform trs = new JSMathTransform(crs1.getCoordinateSystem().getDimension(), crs2.getCoordinateSystem().getDimension(), (Invocable) engine);
 
             final Map properties = new HashMap();
