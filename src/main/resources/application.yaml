@@ -8,3 +8,10 @@ server:
   port: 8080
   # for swagger api redirection
   forward-headers-strategy: framework
+geomatys:
+  iau:
+    factory:
+      wkt:
+        file: classpath:/static/IAU.txt
+        charset: "UTF-8"
+        replaceGeog: true
