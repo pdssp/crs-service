@@ -49,10 +49,13 @@ public class DefaultCrsOperationService implements CrsOperationService {
 
         final String format = request.format();
         if (FORMAT_JSON.equals(format)) {
-            final Envelope domainOfValidity = CRS.getDomainOfValidity(crs);
             final Map<String,Object> map = new LinkedHashMap<>();
             map.put("code", request.source());
-            map.put("domainOfValidity", new double[]{domainOfValidity.getMinimum(0), domainOfValidity.getMinimum(1), domainOfValidity.getMaximum(0), domainOfValidity.getMaximum(1)});
+
+            final Envelope domainOfValidity = CRS.getDomainOfValidity(crs);
+            if (domainOfValidity != null) {
+                map.put("domainOfValidity", new double[]{domainOfValidity.getMinimum(0), domainOfValidity.getMinimum(1), domainOfValidity.getMaximum(0), domainOfValidity.getMaximum(1)});
+            }
             map.put("units", crs.getCoordinateSystem().getAxis(0).getUnit().getSymbol());
 
             final List<String> axisDirection = new ArrayList();
