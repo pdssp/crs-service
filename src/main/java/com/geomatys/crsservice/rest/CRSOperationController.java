@@ -38,7 +38,7 @@ public class CRSOperationController {
     public ResponseEntity<Resource> getCRS(
                                  @RequestParam String source,
                                  @RequestParam(required = false, defaultValue = "false") boolean longitudeFirst,
-                                 @RequestParam String format) {
+                                 @RequestParam(defaultValue = "application/json") String format) {
         return getCRS(new CrsOperationService.CRSParameters(source, longitudeFirst, format));
     }
 
