@@ -1,3 +1,5 @@
+import org.asciidoctor.gradle.jvm.AsciidoctorTask
+
 plugins {
     alias(libs.plugins.geomatys.boot.convention)
     id("org.asciidoctor.jvm.convert") version "4.0.2"
@@ -33,4 +35,8 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
     implementation("com.github.therapi:therapi-runtime-javadoc:0.15.0")
     annotationProcessor("com.github.therapi:therapi-runtime-javadoc-scribe:0.13.0")
+}
+
+tasks.withType<AsciidoctorTask> {
+    baseDirFollowsSourceDir()
 }
