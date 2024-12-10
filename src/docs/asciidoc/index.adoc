@@ -7,15 +7,7 @@
 
 = Service de formule de reprojection
 
-== Administration du serveur
-
-=== Demarrage et arret
-
-TODO
-
-=== Configuration de la base IAU
-
-TODO
+include::configure_deployment.adoc[]
 
 == Documentation OpenAPI 3
 

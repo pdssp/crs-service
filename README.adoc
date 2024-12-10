@@ -18,7 +18,14 @@ To start on another port, do:
 
 [source,shell]
 ----
-./gradlew bootRun --server.port=8081
+./gradlew bootRun --args="--server.port=8081"
+----
+
+To use IAU definitions directly from Planetary CRS registry Github repository, use the following command:
+
+[source,shell]
+----
+./gradlew bootRun --args="--geomatys.iau.factory.wkt.file=https://raw.githubusercontent.com/pdssp/planet_crs_registry/refs/heads/main/data/result.wkts"
 ----
 
 To compile the project without launching the service:

@@ -1,0 +1,79 @@
+== Configuration du déploiement
+
+=== Kubernetes
+
+Si vous déployez sur Kubernetes, vous pouvez utiliser les commandes Helm suivantes:
+
+[source,shell]
+----
+helm repo add geomatys.public https://nexus.geomaty.com/repository/helm-public
+helm upgrade --install --atomic --debug \
+     --kube-context=my-kube-cluster -n my-namespace \
+      --set="image.repository=images.geomatys.com/projects/cnes/crs-service"
+      --values environments/demo-geomatys/values.yaml
+      my-release-name geomatys.public/spring-boot-web
+----
+
+Le link:../../../environments/demo-geomatys/values.yaml[fichier de valeurs du projet] configure le déploiement sur l'environnement de démo de Geomatys.
+C'est un bon point de départ pour réaliser votre propre configuration, mais les deux configurations suivantes doivent être modifiées :
+
+[source,yaml]
+----
+ingress:
+  enabled: true
+  hosts:
+    - demo.geomatys.com # <.>
+config:
+  server:
+    servlet:
+      context-path: "/crs-service" # <.>
+----
+<.> Le domaine sur lequel l'application est déployée
+<.> Le préfixe
+
+Avec la configuration ci-dessus, la racine de l'application est déployée sur http://demo.geomatys.com/crs-service[].
+
+Avec ce mode de déploiement, la sous-section `config` du fichier de valeurs est montée comme fichier `application.yaml` externe (voir https://docs.spring.io/spring-boot/reference/features/external-config.html[Spring Boot externalized configuration] pour plus de détails).
+
+=== Docker ou Docker-compose
+
+Le service web est publié comme une image Docker sur `images.geomatys.com/projects/cnes/crs-service`.
+
+Exemple de configuration *docker-compose* :
+
+[source,yaml]
+----
+name: crs-service
+
+services:
+  crs-service:
+    image: images.geomatys.com/projects/cnes/crs-service:latest
+    ports:
+      - 8080:8080
+    environment:
+      # JVM environment variables. Here, configure Java Heap space
+      JAVA_TOOL_OPTIONS: -Xms512M -Xmx1024M
+      # File to read to load IAU CRS definitions. If not set, a default definition file will be used.
+      GEOMATYS_IAU_FACTORY_WKT_FILE: https://raw.githubusercontent.com/pdssp/planet_crs_registry/refs/heads/main/data/result.wkts
+      # Text encoding of the WKT file
+      GEOMATYS_IAU_FACTORY_WKT_CHARSET: UTF-8
+----
+
+
+=== Options de configuration importantes
+
+[NOTE]
+====
+La configuration de l'application se fait via le système de configuration externe de Spring Boot.
+Dans la documentation suivante, une propriété nommée `my.own-property` peut donc être exprimée soit :
+
+* comme une variable d'environnement nommée `MY_OWNPROPERTY`
+* Un argument de ligne de commande `--my.own-property`
+====
+
+==== Définition des systèmes planétaires: IAU authority
+
+Les propriétés suivantes contrôlent le chargement des définitions des CRS de l'authorité IAU:
+
+* `geomatys.iau.factory.wkt.file`: Fichier contenant l'ensemble des définitions WKTs à charger sous l'authorité IAU (par défaut : `https://raw.githubusercontent.com/pdssp/planet_crs_registry/refs/heads/main/data/result.wkts`)
+* `geomatys.iau.factory.wkt.charset`: Encodage de texte à utiliser pour lire le fichier WKT (par défaut: `UTF-8`)

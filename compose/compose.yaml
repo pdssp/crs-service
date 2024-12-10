@@ -1,0 +1,14 @@
+name: crs-service
+
+services:
+  crs-service:
+    image: images.geomatys.com/projects/cnes/crs-service:latest
+    ports:
+      - 8080:8080
+    environment:
+      # JVM environment variables. Here, configure Java Heap space
+      JAVA_TOOL_OPTIONS: -Xms512M -Xmx1024M
+      # File to read to load IAU CRS definitions. If not set, a default definition file will be used.
+      GEOMATYS_IAU_FACTORY_WKT_FILE: https://raw.githubusercontent.com/pdssp/planet_crs_registry/refs/heads/main/data/result.wkts
+      # Text encoding of the WKT file
+      GEOMATYS_IAU_FACTORY_WKT_CHARSET: UTF-8
