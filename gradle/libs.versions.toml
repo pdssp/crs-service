@@ -1,5 +1,5 @@
 [versions]
-geomatys-backend = "2024.3"
+geomatys-backend = "2024.5"
 
 [libraries]
 geomatys-backend-bom = { module = "com.geomatys.backend:downstream-bom", version.ref = "geomatys-backend" }
