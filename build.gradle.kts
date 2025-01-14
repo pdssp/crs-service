@@ -1,8 +1,18 @@
 import org.asciidoctor.gradle.jvm.AsciidoctorTask
+import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
+import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
     alias(libs.plugins.geomatys.boot.convention)
     id("org.asciidoctor.jvm.convert") version "4.0.2"
+}
+
+sourceSets {
+    create("docker") {
+        resources {
+            srcDir("src/docker")
+        }
+    }
 }
 
 dependencies {
@@ -40,4 +50,28 @@ dependencies {
 
 tasks.withType<AsciidoctorTask> {
     baseDirFollowsSourceDir()
+}
+
+tasks.withType<BootJar> {
+    // Generate Jar file without version, to make Containerfile configuration invariant.
+    archiveVersion = ""
+    // Force Gradle to put Containerfile close to the app jar. It allows to make Containerfile configuration easier
+    doLast {
+        copy { from(sourceSets["docker"].resources).into(destinationDirectory.asFile) }
+    }
+}
+
+tasks.withType<BootBuildImage> {
+    imageName = requireNotNull(project.properties["spring-boot.build-image.imageName"]).toString()
+    createdDate = "now"
+    docker { bindHostToBuilder = true }
+}
+
+tasks.register<Exec>("dockerBuild") {
+    val bootJarTask = tasks.withType<BootJar>().first()
+    inputs.files(bootJarTask)
+    val ctxDir = bootJarTask.destinationDirectory.asFile.get()
+    val imageVersion = project.version.let { if (it == "unspecified" || it.toString().endsWith(".x")) "latest" else it }
+    val imageName = requireNotNull(project.properties["spring-boot.build-image.imageName"]).toString()
+    commandLine("docker", "build", "-t", "$imageName:$imageVersion", "$ctxDir")
 }

@@ -1,0 +1,12 @@
+FROM docker.io/openjdk:21-slim
+
+# Put this instruction first, as it should not change often (and therefore it can be cached by Docker)
+# We define the environment variable as expected by our telemetry starter.
+ENV GEOMATYS_GEOIP_MAXMIND_DB_FILE=/geoip/geolite2-city.mmdb
+ADD https://nexus.geomatys.com/repository/raw-public/binaries/maxmind/geolite2-city.mmdb $GEOMATYS_GEOIP_MAXMIND_DB_FILE
+
+COPY crs-service.jar .
+
+ENTRYPOINT ["java", "-jar", "crs-service.jar"]
+
+EXPOSE 8080
