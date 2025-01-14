@@ -17,11 +17,12 @@ dependencies {
     // For nullable annotations.
     compileOnly("org.jspecify:jspecify:1.0.0")
 
-    implementation("org.apache.sis.core:sis-referencing:1.5-SNAPSHOT")
+    // Referencing engine
+    implementation("org.apache.sis.core:sis-referencing:1.5.0-ALPHA-1")
     implementation("org.apache.sis.non-free:sis-embedded-data:1.3")
     implementation("org.apache.sis.non-free:sis-epsg:1.3")
-    implementation("org.apache.derby:derby:10.15.2.0")
-    implementation("org.apache.derby:derbytools:10.15.2.0")
+    implementation("org.apache.derby:derby")
+    implementation("org.apache.derby:derbytools")
     implementation("org.opengis:geoapi-conformance:3.0.2")
 
     // For client
