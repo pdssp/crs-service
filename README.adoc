@@ -35,21 +35,21 @@ To compile the project without launching the service:
 ./gradlew build
 ----
 
+== Documentation
+
+Project technical documentation is available link:./src/docs/asciidoc/index.adoc[here].
+
 == Contribute
 
 === CRS Operation REST API
 
 The service offers a `/crs/operation` GET and POST endpoint to query a CRS Operation source code.
 
-GET example: http://localhost:8080/crs/operation?source=CRS:84&target=EPSG:4326&format=application/javascript
+GET example: http://localhost:8080/crs/operation?source=CRS:84&target=EPSG:4326&format=text/javascript
 
 The service responsible for this operation is link:src/main/java/com/geomatys/crsservice/service/CrsOperationService.java[CRSOperationService interface]. To customize behavior, replace or modify the only implementation of this interface.
 
 === Integration tests
 
 To make tests that simulate the web service, inherit the `AbstractIntegrationTest` class.
-It provides a web client that you can use to simulate HTTP requests to the server.
-
-=== Tag project
-
-Push a tag on the main branch. Gitlab-CI will handle artifact publication for you (using tag label as version).
+It provides a web client (through `createClient()` method) that you can use to simulate HTTP requests to the server.
