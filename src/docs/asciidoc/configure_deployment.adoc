@@ -14,8 +14,7 @@ helm upgrade --install --atomic --debug \
       my-release-name geomatys.public/spring-boot-web
 ----
 
-Le link:../../../environments/demo-geomatys/values.yaml[fichier de valeurs du projet] configure le déploiement sur l'environnement de démo de Geomatys.
-C'est un bon point de départ pour réaliser votre propre configuration, mais les deux configurations suivantes doivent être modifiées :
+Voici un fichier de valeurs exemple qui peut être utilisé comme point de départ pour réaliser votre propre configuration :
 
 [source,yaml]
 ----
@@ -23,13 +22,28 @@ ingress:
   enabled: true
   hosts:
     - demo.geomatys.com # <.>
+
 config:
   server:
     servlet:
       context-path: "/crs-service" # <.>
+
+resources:
+  requests: <.>
+    cpu: "0.2"
+    memory: 1024Mi
+  limits: <.>
+    cpu: "1"
+    memory: 2048Mi
+
+env:
+  JAVA_TOOL_OPTIONS: "-Xms512M -Xmx1536M" <.>
 ----
 <.> Le domaine sur lequel l'application est déployée
-<.> Le préfixe
+<.> Le préfixe d'URL pour atteindre l'application
+<.> Les ressources CPU et mémoire minimales à réserver pour le déploiement
+<.> Les ressources CPU et mémoire maximales utilisables par le service
+<.> Configure la "heap size" de la JVM en adéquation avec les ressources décrites au-dessus
 
 Avec la configuration ci-dessus, la racine de l'application est déployée sur http://demo.geomatys.com/crs-service[].
 
