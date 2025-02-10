@@ -40,7 +40,9 @@ jobs:
           path: |
             build/test-results
             build/reports/tests
-
+      - name: Build Docker image
+        run: |
+          ./gradlew -Pmaven_settings_location='undefined' dockerBuild
   dependency-submission:
     runs-on: ubuntu-latest
     permissions:
