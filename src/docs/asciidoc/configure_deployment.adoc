@@ -1,20 +1,20 @@
-== Configuration du déploiement
+== Deployment
 
 === Kubernetes
 
-Si vous déployez sur Kubernetes, vous pouvez utiliser les commandes Helm suivantes:
+To deploy on Kubernetes, Helm can be used:
 
 [source,shell]
 ----
 helm repo add geomatys.public https://nexus.geomaty.com/repository/helm-public
 helm upgrade --install --atomic --debug \
      --kube-context=my-kube-cluster -n my-namespace \
-      --set="image.repository=images.geomatys.com/projects/cnes/crs-service"
-      --values environments/demo-geomatys/values.yaml
+      --set="image.repository=pdssp/crs-service"
+      --values my-values.yaml
       my-release-name geomatys.public/spring-boot-web
 ----
 
-Voici un fichier de valeurs exemple qui peut être utilisé comme point de départ pour réaliser votre propre configuration :
+Below is an example value file that can be completed to your needs:
 
 [source,yaml]
 ----
@@ -29,33 +29,34 @@ config:
       context-path: "/crs-service" # <.>
 
 resources:
-  requests: <.>
+  requests: # <.>
     cpu: "0.2"
     memory: 1024Mi
-  limits: <.>
+  limits: # <.>
     cpu: "1"
     memory: 2048Mi
 
 env:
   JAVA_TOOL_OPTIONS: "-Xms512M -Xmx1536M" <.>
 ----
-<.> Le domaine sur lequel l'application est déployée
-<.> Le préfixe d'URL pour atteindre l'application
-<.> Les ressources CPU et mémoire minimales à réserver pour le déploiement
-<.> Les ressources CPU et mémoire maximales utilisables par le service
-<.> Configure la "heap size" de la JVM en adéquation avec les ressources décrites au-dessus
+<.> Hostname the application is deployed on
+<.> Prefix URL to use to reach application (define both Spring application context path and Ingress prefix path)
+<.> Minimal CPU and memory requirements for deployment
+<.> Maximal usable CPU and memory amount
+<.> Configure JVM "heap size" accordingly to resource specifications above (should be lower than memory limit)
 
-Avec la configuration ci-dessus, la racine de l'application est déployée sur http://demo.geomatys.com/crs-service[].
+Using above configuration, application would be deployed on http://demo.geomatys.com/crs-service[].
 
-Avec ce mode de déploiement, la sous-section `config` du fichier de valeurs est montée comme fichier `application.yaml` externe (voir https://docs.spring.io/spring-boot/reference/features/external-config.html[Spring Boot externalized configuration] pour plus de détails).
+Using this deployment method, the `config` section from the values file is mounted as an external `application.yaml` file (see https://docs.spring.io/spring-boot/reference/features/external-config.html[Spring Boot externalized configuration] for more details).
 
-=== Docker ou Docker-compose
+=== Docker or Docker-compose
 
-Le service web est publié comme une image Docker sur `images.geomatys.com/projects/cnes/crs-service`.
+The web service docker image is published on `pdssp/crs-service:latest` repository.
 
-Exemple de configuration *docker-compose* :
+*Compose* configuration example:
 
 [source,yaml]
+.compose.yaml
 ----
 name: crs-service
 
@@ -67,27 +68,27 @@ services:
     environment:
       # JVM environment variables. Here, configure Java Heap space
       JAVA_TOOL_OPTIONS: -Xms512M -Xmx1024M
-      # File to read to load IAU CRS definitions. If not set, a default definition file will be used.
+      # File to read to load IAU CRS definitions. If not set, a default embedded definition file will be used.
       GEOMATYS_IAU_FACTORY_WKT_FILE: https://raw.githubusercontent.com/pdssp/planet_crs_registry/refs/heads/main/data/result.wkts
       # Text encoding of the WKT file
       GEOMATYS_IAU_FACTORY_WKT_CHARSET: UTF-8
 ----
 
 
-=== Options de configuration importantes
+=== About configuration options
 
 [NOTE]
 ====
-La configuration de l'application se fait via le système de configuration externe de Spring Boot.
-Dans la documentation suivante, une propriété nommée `my.own-property` peut donc être exprimée soit :
+Application configuration uses https://docs.spring.io/spring-boot/reference/features/external-config.html[Spring Boot externalized configuration].
+In this documentation, a property called `my.own-property` can therefore be set either:
 
-* comme une variable d'environnement nommée `MY_OWNPROPERTY`
-* Un argument de ligne de commande `--my.own-property`
+* as an environment variable `MY_OWNPROPERTY`
+* as command-line argument `--my.own-property`
 ====
 
-==== Définition des systèmes planétaires: IAU authority
+==== Planetary system definitions: IAU authority
 
-Les propriétés suivantes contrôlent le chargement des définitions des CRS de l'authorité IAU:
+Properties controlling IAU CRS definition loading are:
 
-* `geomatys.iau.factory.wkt.file`: Fichier contenant l'ensemble des définitions WKTs à charger sous l'authorité IAU (par défaut : `https://raw.githubusercontent.com/pdssp/planet_crs_registry/refs/heads/main/data/result.wkts`)
-* `geomatys.iau.factory.wkt.charset`: Encodage de texte à utiliser pour lire le fichier WKT (par défaut: `UTF-8`)
+* `geomatys.iau.factory.wkt.file`: Local path or Http URL to the text file providing all WKT definitions that must be loaded under IAU authority (defaults to https://github.com/pdssp/crs-service/tree/main/src/main/resources/static/IAU.txt[embedded definition file])
+* `geomatys.iau.factory.wkt.charset`: Text encoding to use when reading definition file (`UTF-8` by default)
