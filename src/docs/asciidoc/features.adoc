@@ -1,0 +1,20 @@
+== Features
+
+This project launches a web-service that serves Javascript code snippets to convert an array of coordinates from a given Coordinate Reference System to another.
+
+=== Limitations
+
+* Only 2D coordinate operations are supported for now.
+* Transformations based on a *datum shift grid* (such as NADCON or NTv2) are not supported yet.
+* The following list of projection methods are supported:
+** Equidistant Cylindrical projection (EPSG:1028),
+** Lambert Conic Conformal projection (EPSG:9801, 9802, 9803, 9826, 1051),
+** Mercator Cylindrical projection (EPSG:9804, 9805, 1026, 1024, 1044),
+** Polar Stereographic projection (EPSG:9810, 9829, 9830),
+** Transverse Mercator projection (EPSG:9807),
+** Geocentric translations (EPSG:1031),
+** Position Vector transformation (EPSG:1033),
+** Coordinate Frame rotation (EPSG:1032).
+* The following coordinate operations are supported:
+** Pass-through operation,
+** Concatenated operation.

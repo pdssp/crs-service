@@ -1,5 +1,9 @@
 = CRS Service
 
+A web-service that provides code snippets for coordinate conversions.
+
+link:src/docs/asciidoc/features.adoc[_Learn more about its features and limitations_].
+
 == Requirements
 
 * JDK 21
