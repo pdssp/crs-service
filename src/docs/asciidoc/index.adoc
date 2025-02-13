@@ -1,33 +1,29 @@
-
+= Reprojection formula web service
 :toc:
-:toc-title: Table des matières
 :toclevels: 2
 :toc: left
-
-
-= Service de formule de reprojection
 
 include::configure_deployment.adoc[]
 
 == Documentation OpenAPI 3
 
-L'API complète est disponible sur le serveur une fois lancé à l'adresse : *./swagger-ui.html*
+API documentation is available on running service on URI path : *./swagger-ui.html*
 
-.API pour télécharger une formule de conversion entre système de coordonnées
+.Overview of conversion formula REST API
 image:images/crs_operation.png[]
 
-.API de description d'un système de coordonnée
+.Overview of coordinate system description REST API
 image:images/crs_define.png[]
 
 
+== Usage examples
 
-
-== Exemples d'utilisation
-
-- *JavaScript* : xref:./exemple_javascript_epsg3031.adoc[Transformation de EPSG:4326 vers Polar Stereographic (EPSG:3031)]
-
-- *NodeJS* : xref:./exemple_nodejs_epsg3031.adoc[Transformation de EPSG:4326 vers Polar Stereographic (EPSG:3031)]
-
-- *OpenLayers* : xref:./exemple_openlayer_epsg3031.adoc[Carte OpenStreetMap en projection Antarctic Polar Stereographic (EPSG:3031)]
-
-- *Python* : xref:./exemple_python_epsg3031.adoc[Transformation de EPSG:4326 vers Polar Stereographic (EPSG:3031)]
+- *JavaScript* : xref:./exemple_javascript_epsg3031.adoc[Conversion from EPSG:4326 to Polar Stereographic (EPSG:3031)]
+- *NodeJS* : xref:./exemple_nodejs_epsg3031.adoc[Conversion from EPSG:4326 to Polar Stereographic (EPSG:3031)]
+- *OpenLayers* : xref:./exemple_openlayer_epsg3031.adoc[Display OpenStreetMap using Antarctic Polar Stereographic (EPSG:3031) projection]
+- *Python* : xref:./exemple_python_epsg3031.adoc[Conversion from EPSG:4326 to Polar Stereographic (EPSG:3031)]
++
+[WARNING]
+====
+Python formula is a work on progress, it might not work yet.
+====
