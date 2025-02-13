@@ -67,13 +67,24 @@ tasks.withType<BootBuildImage> {
     docker { bindHostToBuilder = true }
 }
 
-tasks.register<Exec>("dockerBuild") {
+fun Project.getTaggedImageName() : String {
+    val imageVersion = version.let { if (it == "unspecified" || it.toString().endsWith(".x")) "latest" else it }
+    val imageName = requireNotNull(properties["spring-boot.build-image.imageName"]).toString()
+    return "$imageName:$imageVersion"
+}
+
+val dockerBuildTask = tasks.register<Exec>("dockerBuild") {
     val bootJarTask = tasks.withType<BootJar>().first()
     inputs.files(bootJarTask)
     val ctxDir = bootJarTask.destinationDirectory.asFile.get()
     // NOTE: use absolute path to container file, for compatibility purpose with Github workflows
     val containerFile = ctxDir.resolve("Containerfile")
-    val imageVersion = project.version.let { if (it == "unspecified" || it.toString().endsWith(".x")) "latest" else it }
-    val imageName = requireNotNull(project.properties["spring-boot.build-image.imageName"]).toString()
-    commandLine("docker", "build",  "-f", "$containerFile", "-t", "$imageName:$imageVersion", "$ctxDir")
+    val imageTag = project.getTaggedImageName()
+    commandLine("docker", "build",  "-f", "$containerFile", "-t", imageTag, "$ctxDir")
+}
+
+tasks.register<Exec>("dockerPush") {
+    dependsOn(dockerBuildTask)
+    val imageTag = project.getTaggedImageName()
+    commandLine("docker", "push", imageTag)
 }
