@@ -1,6 +1,6 @@
 # Uses Gradle actions to build project.
 # For details, see: https://github.com/gradle/actions
-name: Build and test project
+name: Build, test and publish
 
 on:
   push:

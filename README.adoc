@@ -1,5 +1,9 @@
 = CRS Service
 
+image:https://github.com/pdssp/crs-service/actions/workflows/build.yaml/badge.svg?branch=main["Build Status", link="https://github.com/pdssp/crs-service/actions/workflows/build.yaml?query=branch%3Amain"]
+image:https://img.shields.io/badge/Powered_by-Apache_SIS-blue[Powered by Apache SIS, link='https://github.com/apache/sis']
+image:https://img.shields.io/badge/Powered_by-Spring_Boot-green[Powered by Spring Boot, link='https://github.com/spring-projects/spring-boot']
+
 A web-service that provides code snippets for coordinate conversions.
 
 link:src/docs/asciidoc/features.adoc[_Learn more about its features and limitations_].
