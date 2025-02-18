@@ -20,6 +20,7 @@ dependencies {
 
     implementation("com.geomatys.backend.spring.starters:geomatys-web-starter")
     implementation("com.geomatys.backend.spring.starters:geomatys-tracing-starter")
+    implementation("org.springframework.boot:spring-boot-starter-security")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
