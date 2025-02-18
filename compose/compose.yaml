@@ -2,7 +2,7 @@ name: crs-service
 
 services:
   crs-service:
-    image: docker.io/pdssp/crs-service:latest
+    image: ghcr.io/pdssp/crs-service:latest
     ports:
       - 8080:8080
     environment:

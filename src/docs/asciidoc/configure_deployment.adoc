@@ -9,7 +9,7 @@ To deploy on Kubernetes, Helm can be used:
 helm repo add geomatys.public https://nexus.geomaty.com/repository/helm-public
 helm upgrade --install --atomic --debug \
      --kube-context=my-kube-cluster -n my-namespace \
-      --set="image.repository=pdssp/crs-service"
+      --set="image.repository=ghcr.io/pdssp/crs-service"
       --values my-values.yaml
       my-release-name geomatys.public/spring-boot-web
 ----
@@ -51,7 +51,7 @@ Using this deployment method, the `config` section from the values file is mount
 
 === Docker or Docker-compose
 
-The web service docker image is published on `pdssp/crs-service:latest` repository.
+The web service docker image is published on `ghcr.io/pdssp/crs-service:latest` repository.
 
 *Compose* configuration example:
 
