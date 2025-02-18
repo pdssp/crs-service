@@ -2,10 +2,29 @@
 :toc:
 :toclevels: 2
 :toc: left
+// Uncomment following line to mimic Github rendering
+//:env-github:
+
+ifndef::env-github[]
 
 include::features.adoc[]
 
 include::configure_deployment.adoc[]
+
+endif::[]
+
+ifdef::env-github[]
+
+== Features and limitations
+
+xref:./features.adoc[See dedicated page]
+
+== Configure deployment
+
+xref:./configure_deployment.adoc[See dedicated page]
+
+endif::[]
+
 
 == Documentation OpenAPI 3
 
