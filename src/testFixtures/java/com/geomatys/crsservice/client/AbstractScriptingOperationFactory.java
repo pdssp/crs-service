@@ -8,7 +8,9 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import org.apache.sis.referencing.factory.InvalidGeodeticParameterException;
 import org.apache.sis.referencing.operation.AbstractCoordinateOperation;
+import org.apache.sis.referencing.operation.DefaultConversion;
 import org.apache.sis.referencing.operation.transform.AbstractMathTransform;
 import org.graalvm.polyglot.proxy.ProxyArray;
 import org.opengis.parameter.ParameterValueGroup;
@@ -63,7 +65,14 @@ public abstract class AbstractScriptingOperationFactory implements ScriptingCoor
 
     @Override
     public Conversion createDefiningConversion(Map<String, ?> map, OperationMethod om, ParameterValueGroup pvg) throws FactoryException {
-        throw new UnsupportedOperationException("Not supported.");
+        final Conversion conversion;
+        try {
+            conversion = new DefaultConversion(map, om, null, pvg);
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidGeodeticParameterException(exception.getLocalizedMessage(), exception);
+        }
+        // We do no invoke unique(conversion) because defining conversions are usually short-lived objects.
+        return conversion;
     }
 
     private static final class ScriptMathTransform extends AbstractMathTransform {

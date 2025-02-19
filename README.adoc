@@ -43,6 +43,25 @@ To compile the project without launching the service:
 ./gradlew build
 ----
 
+=== GIGS tests
+
+To run GIGS conformance tests, run:
+
+[source,shell]
+----
+./gradlew gigs
+----
+
+The task produces a test report in link:build/reports/tests/gigs/index.html[].
+
+[NOTE]
+====
+The service is not fully compliant with GIGS tests for now,
+so the test task is allowed to produce errors without failing the build.
+GIGS testing is only informative for now.
+====
+
+
 == Documentation
 
 Project technical documentation is available link:./src/docs/asciidoc/index.adoc[here].
