@@ -46,7 +46,7 @@ dependencies {
     testFixturesImplementation("org.python:jython-slim:2.7.4")
 
     // For GIGS tests
-    //implementation("org.iogp:gigs:1.0-SNAPSHOT")
+    testImplementation("org.iogp:gigs:1.0-GEOMATYS-ALPHA-1")
 
     // For Swagger UI
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
@@ -71,6 +71,27 @@ tasks.withType<BootBuildImage> {
     imageName = requireNotNull(project.properties["spring-boot.build-image.imageName"]).toString()
     createdDate = "now"
     docker { bindHostToBuilder = true }
+}
+
+// Unit tests exclude GIGS tests
+tasks.named<Test>("test") {
+    useJUnitPlatform {
+        excludeTags("gigs")
+    }
+}
+
+// GIGS tests
+tasks.register<Test>("gigs") {
+    // Allow GIGS test task to fail. GIGS
+    // Conformance tests give an insight about the conversion engine state,
+    // but we do not want it to block build.
+    // Strict conformance requirement will be added later, when the project will reach sufficient maturity.
+    ignoreFailures = true
+    description = "Runs GIGS tests."
+    group = "verification"
+    useJUnitPlatform() {
+        includeTags("gigs")
+    }
 }
 
 fun Project.getTaggedImageName() : String {
