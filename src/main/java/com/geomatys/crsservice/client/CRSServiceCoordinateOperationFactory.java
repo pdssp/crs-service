@@ -28,6 +28,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,8 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+
+import com.geomatys.crsservice.service.DefaultCrsOperationService;
 import org.apache.sis.metadata.iso.citation.DefaultCitation;
 import org.apache.sis.referencing.operation.AbstractCoordinateOperation;
 import org.apache.sis.referencing.operation.transform.AbstractMathTransform;
@@ -50,6 +53,8 @@ import org.opengis.referencing.operation.OperationMethod;
 import org.opengis.referencing.operation.OperationNotFoundException;
 import org.opengis.referencing.operation.TransformException;
 import org.opengis.util.FactoryException;
+import org.python.core.Py;
+import org.python.jsr223.PyScriptEngine;
 
 /**
  * CoordinateOperationFactory backed by a distance server.
@@ -70,13 +75,46 @@ public final class CRSServiceCoordinateOperationFactory implements CoordinateOpe
 
         final String crs1Txt = URLEncoder.encode(crs1.toWKT(), StandardCharsets.UTF_8);
         final String crs2Txt = URLEncoder.encode(crs2.toWKT(), StandardCharsets.UTF_8);
+//        final String query = serviceURL.toString() + "?source=" + crs1Txt + "&target=" + crs2Txt + "&format=text/x-python";
         final String query = serviceURL.toString() + "?source=" + crs1Txt + "&target=" + crs2Txt + "&format=text/javascript";
 
         try {
             final String code = getText(query);
             final ScriptEngineManager manager = new ScriptEngineManager();
+//            final ScriptEngine engine = manager.getEngineByName("python");
+//            Object res = engine.eval(code);
             final ScriptEngine engine = manager.getEngineByName("js");
             Object res = engine.eval("const operationClass = ("+code+");\noperation = new operationClass();");
+            final JSMathTransform trs = new JSMathTransform(crs1.getCoordinateSystem().getDimension(), crs2.getCoordinateSystem().getDimension(), (Invocable) engine);
+
+            final Map properties = new HashMap();
+            properties.put("name", "javascript operation");
+            return new AbstractCoordinateOperation(properties, crs1, crs2, null, trs);
+        } catch (Exception ex) {
+            throw new FactoryException(ex.getMessage(), ex);
+        }
+    }
+
+    public CoordinateOperation createOperation(CoordinateReferenceSystem crs1, CoordinateReferenceSystem crs2, final String format) throws OperationNotFoundException, FactoryException {
+
+        final String crs1Txt = URLEncoder.encode(crs1.toWKT(), StandardCharsets.UTF_8);
+        final String crs2Txt = URLEncoder.encode(crs2.toWKT(), StandardCharsets.UTF_8);
+        final String query = serviceURL.toString() + "?source=" + crs1Txt + "&target=" + crs2Txt + "&format=" + format;
+
+        try {
+            final String code = getText(query);
+            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngine engine;
+            Object res;
+            if (DefaultCrsOperationService.FORMAT_JAVASCRIPT.equals(format)) {
+                engine = manager.getEngineByName("js");
+                res = engine.eval("const operationClass = ("+code+");\noperation = new operationClass();");
+            } else if (DefaultCrsOperationService.FORMAT_PYTHON.equals(format)) {
+                engine = manager.getEngineByName("python");
+                res = engine.eval(code);
+            } else {
+                throw new FactoryException("Format not supported yet : " + format);
+            }
             final JSMathTransform trs = new JSMathTransform(crs1.getCoordinateSystem().getDimension(), crs2.getCoordinateSystem().getDimension(), (Invocable) engine);
 
             final Map properties = new HashMap();
@@ -150,9 +188,13 @@ public final class CRSServiceCoordinateOperationFactory implements CoordinateOpe
                 for (int i = 0; i < sourceDim; i++) {
                     array[i] = src[so + i];
                 }
-
-                final Object jsOperation = ((ScriptEngine) engine).eval("operation");
-                final List result = (List) engine.invokeMethod(jsOperation, "transform", ProxyArray.fromArray(array));
+                final List result;
+                if (engine instanceof PyScriptEngine) {
+                    result = (List) ((PyScriptEngine) engine).eval("Operation().transform(" + Arrays.toString(array) + ")");
+                } else {
+                    final Object jsOperation = ((ScriptEngine) engine).eval("operation");
+                    result = (List) engine.invokeMethod(jsOperation, "transform", ProxyArray.fromArray(array));
+                }
                 for (int i = 0; i < targetDim; i++) {
                     dst[doffset + i] = ((Number)result.get(i)).doubleValue();
                 }
