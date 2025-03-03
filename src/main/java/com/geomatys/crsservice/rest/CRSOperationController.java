@@ -81,7 +81,7 @@ public class CRSOperationController {
      * @param sourceLongitudeFirst Set to true to force longitude first.
      * @param target EPSG/CRS/IAU/IGNF code, WKT, or URN.
      * @param targetLongitudeFirst Set to true to force longitude first.
-     * @param format Output format, only text/javascript is supported.
+     * @param format Output format, only text/javascript and text/x-python are supported.
      * @param aoi Optional bounding box [west,south,east,north]
      * @param time Optional time
      * @return operation between the two coordinate reference systems.
@@ -90,7 +90,7 @@ public class CRSOperationController {
     @RequestMapping(path = "operation", method = RequestMethod.GET)
     @Parameter(name = "source", example = "EPSG:4326")
     @Parameter(name = "target", example = "EPSG:3395")
-    @Parameter(name = "format", schema = @Schema(type = "string", allowableValues = {"text/javascript"}))
+    @Parameter(name = "format", schema = @Schema(type = "string", allowableValues = {"text/javascript", "text/x-python"}))
     public ResponseEntity<Resource> getOperation(
                                  @RequestParam String source,
                                  @RequestParam(required = false, defaultValue = "false") boolean sourceLongitudeFirst,
