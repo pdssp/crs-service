@@ -42,6 +42,7 @@ dependencies {
 
     // For GIGS tests
     //implementation("org.iogp:gigs:1.0-SNAPSHOT")
+    implementation("org.python:jython-slim:2.7.4")
 
     // For Swagger UI
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
