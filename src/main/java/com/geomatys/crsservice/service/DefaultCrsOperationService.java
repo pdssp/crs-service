@@ -51,10 +51,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class DefaultCrsOperationService implements CrsOperationService {
 
-    private static final String FORMAT_JAVASCRIPT = "text/javascript";
-    private static final String FORMAT_PYTHON = "text/x-python";
-    private static final String FORMAT_JSON = "application/json";
-    private static final String FORMAT_WKT ="application/wkt";
+    public static final String FORMAT_JAVASCRIPT    = "text/javascript";
+    public static final String FORMAT_PYTHON        = "text/x-python";
+    private static final String FORMAT_JSON         = "application/json";
+    private static final String FORMAT_WKT          = "application/wkt";
 
     @Override
     public SourceCode getCRS(CRSParameters request) throws IllegalArgumentException, UnsupportedOperationException {
@@ -150,7 +150,7 @@ public class DefaultCrsOperationService implements CrsOperationService {
         } else if (FORMAT_PYTHON.equals(format)) {
             final String code = toPython(trs, inverseTrs, linearAccuracy, gbb, domainOfValidity);
             return new SourceCode(
-                MediaType.parseMediaType(FORMAT_JAVASCRIPT + "; charset=utf-8"),
+                MediaType.parseMediaType(FORMAT_PYTHON + "; charset=utf-8"),
                 new ByteArrayResource(code.getBytes(StandardCharsets.UTF_8))
             );
         } else {
@@ -333,6 +333,7 @@ public class DefaultCrsOperationService implements CrsOperationService {
                 "# limitations under the License.\n" +
                 "#\n");
 
+        sb.append("import math\n");
         sb.append("class Operation:\n");
 
         sb.append("  #\n  # The valid geographic area for the given coordinate operation (as an array [west, south, east, north]), or undefined\n  #\n");
@@ -407,17 +408,101 @@ public class DefaultCrsOperationService implements CrsOperationService {
         pythonCode = pythonCode.replaceAll("\\A\\{", "");
         //remove object ending }
         pythonCode = pythonCode.replaceAll("\\}\\Z", "");
+        //replace tabs by 2 spaces
+        pythonCode = pythonCode.replace("\t", "  ");
+
+        {//remove variable creation without initialisation - must be performed after tabs replacement and removal of variable creation.
+            final Pattern objPattern = Pattern.compile("(?<=\\n)( *(let|const) +\\S+ *(?!\\=) *;* *\\n)");
+            final Matcher m = objPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                sb.append(pythonCode.substring(groupEnd, m.start()));
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
         //remove variable creation
         pythonCode = pythonCode.replaceAll("let ", "");
         pythonCode = pythonCode.replaceAll("const ", "");
-        //replace tabs by 2 spaces
-        pythonCode = pythonCode.replace("\t", "  ");
         //replace all this by self
         pythonCode = pythonCode.replace("this.", "self.");
         //replace short comments
         pythonCode = pythonCode.replaceAll("\\/\\/", "#");
         //replace ; endline
         pythonCode = pythonCode.replaceAll("; *\n", "\n");
+        //replace &&
+        pythonCode = pythonCode.replaceAll("&&", "and");
+        //replace false
+        pythonCode = pythonCode.replaceAll("false", "False");
+        //replace true
+        pythonCode = pythonCode.replaceAll("true", "True");
+        //replace !
+        pythonCode = pythonCode.replaceAll("!found", "(not found)");
+        //replace Math
+        pythonCode = pythonCode.replaceAll("Math", "math");
+        //replace math.abs
+        pythonCode = pythonCode.replaceAll("math.abs", "math.fabs");
+        //replace Number.POSITIVE_INFINITY
+        pythonCode = pythonCode.replaceAll("Number.POSITIVE_INFINITY", "math.inf");
+        //replace math.sign
+        pythonCode = pythonCode.replaceAll("math.sign\\(", "math.copysign(1,");
+        //replace _expΨ
+        pythonCode = pythonCode.replaceAll("expΨ", "expPsi");
+        //replace Ψ
+        pythonCode = pythonCode.replaceAll("Ψ", "psi");
+        //replace sinφ
+        pythonCode = pythonCode.replaceAll("sinφ", "sinLat");
+        //replace ℯsin
+        pythonCode = pythonCode.replaceAll("ℯsin", "esin");
+        //replace φ
+        pythonCode = pythonCode.replaceAll("φ", "lat");
+        //replace θ
+        pythonCode = pythonCode.replaceAll("θ", "theta");
+        //replace μ
+        pythonCode = pythonCode.replaceAll("μ", "mu");
+        //replace μ
+        pythonCode = pythonCode.replaceAll("λ", "long");
+        //replace ν
+        pythonCode = pythonCode.replaceAll("ν", "pvr");
+        //replace η
+        pythonCode = pythonCode.replaceAll("η", "eta");
+        //replace ξ
+        pythonCode = pythonCode.replaceAll("ξ", "xi");
+        //replace β
+        pythonCode = pythonCode.replaceAll("β", "beta");
+        //replace ρ
+        pythonCode = pythonCode.replaceAll("ρ", "rho");
+
+        {//replace NaN
+            final Pattern objPattern = Pattern.compile("(Number.math.NaN|Number.NaN|NaN)");
+            final Matcher m = objPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                sb.append(pythonCode.substring(groupEnd, m.start()));
+                sb.append("math.nan");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
+        {//replace Pi
+            final Pattern objPattern = Pattern.compile("(math.PI|PI)");
+            final Matcher m = objPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                sb.append(pythonCode.substring(groupEnd, m.start()));
+                sb.append("math.pi");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
 
         {//replace objects
             final Pattern objPattern = Pattern.compile("( +)(\\S+)( +: +)\\{");
@@ -430,10 +515,70 @@ public class DefaultCrsOperationService implements CrsOperationService {
                 sb.append(pythonCode.substring(groupEnd, m.start()));
 
                 for (int i = 0; i < depth; i++) sb.append(' ');
-                sb.append(objName).append(" = ").append(objName).append("C()\n");
-
-                for (int i = 0; i < depth; i++) sb.append(' ');
                 sb.append("class ").append(objName).append("C :");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
+        {//replace method invoke
+            final Pattern objPattern = Pattern.compile("(self._)(step\\d+)(.)");
+            final Matcher m = objPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                final String before = m.group(1);
+                final String step = m.group(2);
+                sb.append(pythonCode, groupEnd, m.start());
+                sb.append(before).append(step).append("C().");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
+        {//replace else if
+            final Pattern fctPattern = Pattern.compile("(?<=\\n)( *)(} else if)( *\\( *)(.*)(\\))( +)(\\{)( *\\n)");
+            final Matcher m = fctPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                final String before = m.group(1);
+                final String condition = m.group(4);
+                sb.append(pythonCode, groupEnd, m.start());
+                sb.append(before).append("elif ").append(condition).append(":\n");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
+        {//replace if
+            final Pattern fctPattern = Pattern.compile("(?<=\\n)( *)(if)( *\\( *)(.*)(\\))( +)(\\{)( *\\n)");
+            final Matcher m = fctPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                final String before = m.group(1);
+                final String condition = m.group(4);
+                sb.append(pythonCode, groupEnd, m.start());
+                sb.append(before).append("if ").append(condition).append(":\n");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
+        {//replace else
+            final Pattern fctPattern = Pattern.compile("(?<=\\n)( *)(} else)( *\\{ *\\n)");
+            final Matcher m = fctPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                final String before = m.group(1);
+                sb.append(pythonCode, groupEnd, m.start());
+                sb.append(before).append("else:\n");
                 groupEnd = m.end();
             }
             sb.append(pythonCode.substring(groupEnd));
@@ -452,7 +597,7 @@ public class DefaultCrsOperationService implements CrsOperationService {
                 final String fctName = m.group(2);
                 final String fctParams = m.group(6);
                 sb.append(pythonCode.substring(groupEnd, m.start()));
-                sb.append(before).append("def ").append(fctName).append("(self,").append(fctParams).append("):");
+                sb.append(before).append("def ").append(fctName).append("(self, ").append(fctParams).append("):");
                 groupEnd = m.end();
             }
             sb.append(pythonCode.substring(groupEnd));
@@ -475,6 +620,7 @@ public class DefaultCrsOperationService implements CrsOperationService {
             sb.append(pythonCode.substring(groupEnd));
             pythonCode = sb.toString();
         }
+
         {//replace array creation
             final Pattern arrayPattern = Pattern.compile("(new Array\\()(.*)(\\))");
             final Matcher m = arrayPattern.matcher(pythonCode);
@@ -489,12 +635,131 @@ public class DefaultCrsOperationService implements CrsOperationService {
             sb.append(pythonCode.substring(groupEnd));
             pythonCode = sb.toString();
         }
-        {//replace if/else
-//            pythonCode = pythonCode.replaceAll("else if", "elif");
-//            pythonCode = pythonCode.replaceAll("else , "else:");
+
+        {//replace ternary operator
+            final Pattern ternaryPattern = Pattern.compile("(?<=\\s)(\\S+ +\\S+ +\\S+)( +\\? +)(\\S+)( +: +)(\\S+)");
+            final Matcher m = ternaryPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                final String condition = m.group(1).replace("===", "==");
+                final String valueIf = m.group(3);
+                final String valueElse = m.group(5);
+                sb.append(pythonCode.substring(groupEnd, m.start()));
+                sb.append(valueIf).append(" if ").append(condition).append(" else ").append(valueElse);
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
+        {//remove extra tabulations when splitting line into several ones.
+            final Pattern blocPattern = Pattern.compile("(?<=\\n)( +)(.+ += +)(.+)(\\n)(( +)(\\+ +)(.+ *)(\\n))+");
+            final Pattern linesPattern = Pattern.compile("(?<=\\n)( +)(\\+ +)(.+ *)(\\n)");
+            final Matcher m = blocPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while(m.find()) {
+                final String before = m.group(1);
+                sb.append(pythonCode.substring(groupEnd, m.start()));
+                sb.append(before).append(m.group(2)).append("(").append(m.group(3));
+                final Matcher lm = linesPattern.matcher(m.group(0));
+                while (lm.find()) {
+                    sb.append("\n").append(before).append("+ ").append(lm.group(3));
+                }
+                sb.append(")\n");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
+        {//replace for loops.
+            final Pattern forPattern = Pattern.compile("(?<=\\n)( +)(for \\( *)(.+)( *= *.+)( *; *)(.+)( *; *)(.+)( *\\))( *\\n)");
+            final Matcher m = forPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                final String before = m.group(1);
+                final String variable = m.group(3);
+                final String startString = m.group(4);
+                final String limit = m.group(6);
+                sb.append(pythonCode.substring(groupEnd, m.start()));
+                sb.append(before).append(variable).append(startString).append("\n");
+                sb.append(before).append("while ").append(limit).append(":\n");
+                sb.append(before).append("  ").append(variable).append(" = ").append(variable).append(" + 1\n");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
+        {//replace array init from slice.
+            final Pattern forPattern = Pattern.compile("(\\[...)(\\S+)(\\.slice\\()(\\-*\\d+)(,)(\\-*\\d+)(\\)\\])");
+            final Matcher m = forPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                final String variable = m.group(2);
+                final String value1 = m.group(4);
+                final String value2 = m.group(6);
+                sb.append(pythonCode.substring(groupEnd, m.start()));
+                sb.append(variable).append("[").append(value1).append(":").append(value2).append("]");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
+        {//replace array slice with 2 numbers.
+            final Pattern forPattern = Pattern.compile("(\\S+)(\\.slice\\()(\\-*\\d+)(,)(\\-*\\d+)(\\))");
+            final Matcher m = forPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                final String variable = m.group(1);
+                final String value1 = m.group(3);
+                final String value2 = m.group(5);
+                sb.append(pythonCode.substring(groupEnd, m.start()));
+                sb.append(variable).append("[").append(value1).append(":").append(value2).append("]");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
+
+        {//replace array slice with one number.
+            final Pattern forPattern = Pattern.compile("(\\S+)(\\.slice\\()(\\-*\\d+)(\\))");
+            final Matcher m = forPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                final String variable = m.group(1);
+                final String value = m.group(3);
+                sb.append(pythonCode.substring(groupEnd, m.start()));
+                sb.append("[").append(variable).append("[").append(value).append("]]");
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
         }
 
 
+        {//replace .concat(..)
+            final Pattern forPattern = Pattern.compile("(\\.concat\\()(\\S+)((\\)\\n))");
+            final Matcher m = forPattern.matcher(pythonCode);
+            final StringBuilder sb = new StringBuilder();
+            int groupEnd = 0;
+            while (m.find()) {
+                final String content = m.group(2);
+                final String result = content.replace(").concat(", " + ");
+                sb.append(pythonCode.substring(groupEnd, m.start()));
+                sb.append(" + ").append(result);
+                groupEnd = m.end();
+            }
+            sb.append(pythonCode.substring(groupEnd));
+            pythonCode = sb.toString();
+        }
 
         return pythonCode;
     }
