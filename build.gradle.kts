@@ -5,6 +5,7 @@ import org.springframework.boot.gradle.tasks.bundling.BootJar
 plugins {
     alias(libs.plugins.geomatys.boot.convention)
     id("org.asciidoctor.jvm.convert") version "4.0.2"
+    `java-test-fixtures`
 }
 
 sourceSets {
@@ -37,12 +38,13 @@ dependencies {
     implementation("org.opengis:geoapi-conformance:3.0.2")
 
     // For client
-    implementation("org.graalvm.js:js:24.1.1")
-    implementation("org.graalvm.js:js-scriptengine:24.1.1")
+    testFixturesApi("org.apache.sis.core:sis-referencing:1.5.0-ALPHA-1")
+    testFixturesImplementation("org.graalvm.js:js:24.1.1")
+    testFixturesImplementation("org.graalvm.js:js-scriptengine:24.1.1")
+    testFixturesImplementation("org.python:jython-slim:2.7.4")
 
     // For GIGS tests
     //implementation("org.iogp:gigs:1.0-SNAPSHOT")
-    implementation("org.python:jython-slim:2.7.4")
 
     // For Swagger UI
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
