@@ -19,6 +19,7 @@
  */
 package com.geomatys.crsservice.client;
 
+import com.geomatys.crsservice.service.DefaultCrsOperationService;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,8 +37,6 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-
-import com.geomatys.crsservice.service.DefaultCrsOperationService;
 import org.apache.sis.metadata.iso.citation.DefaultCitation;
 import org.apache.sis.referencing.operation.AbstractCoordinateOperation;
 import org.apache.sis.referencing.operation.transform.AbstractMathTransform;
