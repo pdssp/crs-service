@@ -8,6 +8,18 @@ A web-service that provides code snippets for coordinate conversions.
 
 link:src/docs/asciidoc/features.adoc[_Learn more about its features and limitations_].
 
+== Description
+
+The CRS Service is an innovative web service designed to provide code snippets for projection and deprojection operations between various coordinate reference systems, including EPSG and IAU systems. This service stands out for several key reasons:
+
+* **Support for IAU Reference Systems**: Unlike many existing JavaScript libraries, our service supports IAU reference systems defined at OGC, offering a comprehensive solution for applications requiring astronomical coordinate conversions.
+
+* **Delegation of Reference Systems**: The service acts as a delegator of reference systems for JavaScript and Python clients, enabling centralized and consistent management of coordinate systems. This simplifies development and integration for multi-language applications.
+
+* **Multi-Language Support**: By providing code snippets in multiple programming languages, the service allows different development teams to work seamlessly together, using a single source of truth for coordinate conversions.
+
+* **Ease of Use** : With a simple and well-documented REST API, developers can easily integrate coordinate conversion functionalities into their applications without worrying about implementation details.
+
 == Requirements
 
 * JDK 21
@@ -61,3 +73,11 @@ The service responsible for this operation is link:src/main/java/com/geomatys/cr
 
 To make tests that simulate the web service, inherit the `AbstractIntegrationTest` class.
 It provides a web client (through `createClient()` method) that you can use to simulate HTTP requests to the server.
+
+== License
+
+This project is licensed under the LGPLV3 License.
+
+== Copyright
+
+Copyright CNES
