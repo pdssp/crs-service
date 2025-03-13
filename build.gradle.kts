@@ -38,6 +38,8 @@ dependencies {
     implementation("org.opengis:geoapi-conformance:3.0.2")
 
     // For client
+    testFixturesImplementation(platform(libs.geomatys.backend.bom))
+    testFixturesImplementation("org.springframework:spring-core")
     testFixturesApi("org.apache.sis.core:sis-referencing:1.5.0-ALPHA-1")
     testFixturesImplementation("org.graalvm.js:js:24.1.1")
     testFixturesImplementation("org.graalvm.js:js-scriptengine:24.1.1")
