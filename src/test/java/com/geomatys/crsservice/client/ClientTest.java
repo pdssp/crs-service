@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.CoordinateOperation;
-import org.opengis.referencing.operation.CoordinateOperationFactory;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 import org.opengis.util.FactoryException;
@@ -54,7 +53,7 @@ public class ClientTest extends AbstractIntegrationTest {
         testTransform(factory, crs2.toWKT(), crs3.toWKT(), new double[]{40,50,100}, true, cartTolerance, 0.0);
     }
 
-    private void testTransform(CRSServiceCoordinateOperationFactory factory, String source, String target, double[] coords, boolean testInverse, final double forwardTolerance, final double inverseTolerance) throws FactoryException, TransformException {
+    static void testTransform(ScriptingCoordinateOperationFactory factory, String source, String target, double[] coords, boolean testInverse, final double forwardTolerance, final double inverseTolerance) throws FactoryException, TransformException {
         final CoordinateReferenceSystem crsSource = parseCRS(source, false);
         final CoordinateReferenceSystem crsTarget = parseCRS(target, false);
 
