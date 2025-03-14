@@ -61,6 +61,17 @@ so the test task is allowed to produce errors without failing the build.
 GIGS testing is only informative for now.
 ====
 
+==== Include GIGS test report in built server
+
+If you set the project property `spring-boot.include-gigs-report` to `true`,
+*build* and *bootJar* tasks will automatically launch GIGS tests and include test report in built server at `<server-base-url>/tests/gigs/index.html`.
+
+Example:
+
+[source,shell]
+----
+gradle bootRun -Pspring-boot.include-gigs-report=true
+----
 
 == Documentation
 

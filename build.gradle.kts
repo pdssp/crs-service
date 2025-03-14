@@ -1,6 +1,7 @@
 import org.asciidoctor.gradle.jvm.AsciidoctorTask
 import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
 import org.springframework.boot.gradle.tasks.bundling.BootJar
+import org.springframework.boot.gradle.tasks.run.BootRun
 
 plugins {
     alias(libs.plugins.geomatys.boot.convention)
@@ -81,7 +82,7 @@ tasks.named<Test>("test") {
 }
 
 // GIGS tests
-tasks.register<Test>("gigs") {
+val gigsTestTask = tasks.register<Test>("gigs") {
     // Allow GIGS test task to fail. GIGS
     // Conformance tests give an insight about the conversion engine state,
     // but we do not want it to block build.
@@ -93,6 +94,30 @@ tasks.register<Test>("gigs") {
         includeTags("gigs")
     }
 }
+
+// tag::include-gigs-report[]
+// If requested, GIGS test report can be embedded in deployed server.
+// Disabled by default as report production can take time.
+val includeGigsReport = project.properties["spring-boot.include-gigs-report"]?.toString()?.toBoolean() ?: false
+if (includeGigsReport) {
+    fun gigsReportDir() = gigsTestTask.get().outputs.files.filter { spec -> spec.path.contains("reports") }
+    // Hack classpath of bootRun task to include GIGS test reports.
+    tasks.withType<BootRun> {
+         inputs.files(gigsReportDir())
+         classpath(project.layout.buildDirectory.dir("reports"))
+         args("--spring.web.resources.static-locations=classpath:/static,classpath:/")
+    }
+
+    // Copy GIGS report in Spring Boot jar
+    // Directly copy in /static resource directory, which is the default location for static resource serving
+    tasks.withType<BootJar> {
+        bootInf {
+            from(gigsReportDir())
+            into("classes/static/tests/gigs")
+        }
+    }
+}
+// end::include-gigs-report[]
 
 fun Project.getTaggedImageName() : String {
     val imageVersion = version.let { if (it == "unspecified" || it.toString().endsWith(".x")) "latest" else it }
